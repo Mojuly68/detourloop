@@ -5,9 +5,9 @@
 #   android-apk     Installable APK for testing on any Android phone. No setup needed:
 #                   until you upload a keystore, the release APK is signed with the debug key
 #                   (fine for sideloading, not for Google Play).
-#   ios-testflight  IPA uploaded to TestFlight. Needs an Apple Developer account, an
-#                   App Store Connect API key added in Codemagic (Team settings → Integrations),
-#                   and an app record in App Store Connect with bundle ID com.detourloop.app.
+#   ios-testflight  IPA uploaded to TestFlight. Uses the App Store Connect API key "DYNOMARK"
+#                   (Codemagic → Settings → Integrations → Developer Portal) and needs an app
+#                   record in App Store Connect with bundle ID com.detourloop.app.
 #
 # Optional: add a variable group named "detourloop_public" (Codemagic → app → Environment variables)
 # with EXPO_PUBLIC_SUPABASE_URL, EXPO_PUBLIC_SUPABASE_ANON_KEY, EXPO_PUBLIC_MAPBOX_TOKEN,
@@ -39,7 +39,8 @@ workflows:
       - name: Build release APK
         script: |
           cd android
-          ./gradlew assembleRelease
+          # arm64 only: every Android phone from the last ~8 years; halves native compile time
+          ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a
     artifacts:
       - apps/mobile/android/app/build/outputs/apk/release/*.apk
     # To get the download link by email after each build, uncomment and add your address:
@@ -54,7 +55,7 @@ workflows:
     instance_type: mac_mini_m2
     working_directory: apps/mobile
     integrations:
-      app_store_connect: DetourLoop ASC key   # must match the key name you add in Codemagic
+      app_store_connect: DYNOMARK   # the App Store Connect API key already connected in Codemagic (works for every app in the Apple team)
     environment:
       node: 22
       xcode: latest
@@ -74,8 +75,6 @@ workflows:
         script: npx expo prebuild --platform ios --clean --no-install
       - name: Install CocoaPods
         script: cd ios && pod install
-      - name: Declare no non-exempt encryption (skips the export-compliance prompt)
-        script: /usr/libexec/PlistBuddy -c "Add :ITSAppUsesNonExemptEncryption bool false" ios/$XCODE_SCHEME/Info.plist || true
       - name: Apply signing profiles
         script: xcode-project use-profiles
       - name: Set build number
