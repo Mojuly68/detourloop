@@ -5,7 +5,7 @@ import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withSequence, w
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as Haptics from 'expo-haptics';
 import { Platform } from 'react-native';
-import { color, font, radius, size, space, touch } from '@/theme/tokens';
+import { color, font, radius, shadow, size, space, touch } from '@/theme/tokens';
 
 export type IconName = React.ComponentProps<typeof Ionicons>['name'];
 export const Icon = ({ name, size: s = 20, color: c = color.ocean }: { name: IconName | string; size?: number; color?: string }) => (
@@ -17,16 +17,16 @@ export const tap = () => { if (Platform.OS !== 'web') Haptics.selectionAsync().c
 // ── Typography ──────────────────────────────────────────────────────────────
 type TV = 'hero' | 'h1' | 'h2' | 'h3' | 'body' | 'bodyStrong' | 'small' | 'micro' | 'label' | 'kicker';
 const tv: Record<TV, TextStyle> = {
-  hero: { fontFamily: font.display, fontSize: size.hero, lineHeight: size.hero * 1.08, letterSpacing: -1.2 },
-  h1: { fontFamily: font.display, fontSize: size.h1, lineHeight: size.h1 * 1.12, letterSpacing: -0.7 },
-  h2: { fontFamily: font.display, fontSize: size.h2, lineHeight: size.h2 * 1.18, letterSpacing: -0.4 },
-  h3: { fontFamily: font.bold, fontSize: size.h3, lineHeight: size.h3 * 1.25, letterSpacing: -0.2 },
+  hero: { fontFamily: font.display, fontSize: size.hero, lineHeight: size.hero * 1.1, letterSpacing: -0.9 },
+  h1: { fontFamily: font.display, fontSize: size.h1, lineHeight: size.h1 * 1.14, letterSpacing: -0.6 },
+  h2: { fontFamily: font.display, fontSize: size.h2, lineHeight: size.h2 * 1.2, letterSpacing: -0.3 },
+  h3: { fontFamily: font.medium, fontSize: size.h3, lineHeight: size.h3 * 1.25, letterSpacing: -0.1 },
   body: { fontFamily: font.body, fontSize: size.body, lineHeight: size.body * 1.5 },
   bodyStrong: { fontFamily: font.semibold, fontSize: size.body, lineHeight: size.body * 1.45 },
   small: { fontFamily: font.medium, fontSize: size.small, lineHeight: size.small * 1.45 },
   micro: { fontFamily: font.medium, fontSize: size.micro, lineHeight: size.micro * 1.4 },
   label: { fontFamily: font.semibold, fontSize: size.small, letterSpacing: 0.2 },
-  kicker: { fontFamily: font.bold, fontSize: 11, letterSpacing: 1.6, textTransform: 'uppercase' },
+  kicker: { fontFamily: font.medium, fontSize: 11, letterSpacing: 1.4, textTransform: 'uppercase' },
 };
 export function T({ v = 'body', c = color.ink, style, children, ...rest }: { v?: TV; c?: string; style?: StyleProp<TextStyle>; children: React.ReactNode; numberOfLines?: number; accessibilityRole?: 'header' | 'text' }) {
   return <Text {...rest} style={[tv[v], { color: c }, style]}>{children}</Text>;
@@ -55,14 +55,15 @@ export function Press({ style, children, scaleTo = 0.97, onPress, ...rest }: Pre
 type BV = 'primary' | 'secondary' | 'ghost' | 'sand' | 'light' | 'danger';
 const bv: Record<BV, { bg: string; fg: string; border?: string }> = {
   primary: { bg: color.ocean, fg: color.white },
-  secondary: { bg: 'transparent', fg: color.ocean, border: color.ocean },
+  secondary: { bg: color.card, fg: color.ocean, border: color.tileLine },
   ghost: { bg: 'transparent', fg: color.ocean },
   sand: { bg: color.sand, fg: color.charcoal },
-  light: { bg: color.white, fg: color.ocean },
+  light: { bg: color.card, fg: color.ocean },
   danger: { bg: 'transparent', fg: color.danger, border: color.danger },
 };
 export function Button({ label, onPress, v = 'primary', icon, loading, disabled, style, small, accessibilityLabel }: { label: string; onPress?: () => void; v?: BV; icon?: string; loading?: boolean; disabled?: boolean; style?: StyleProp<ViewStyle>; small?: boolean; accessibilityLabel?: string }) {
   const c = bv[v];
+  const chip = !!icon && !small && (v === 'primary' || v === 'sand' || v === 'light');
   return (
     <Press
       onPress={disabled || loading ? undefined : onPress}
@@ -70,20 +71,27 @@ export function Button({ label, onPress, v = 'primary', icon, loading, disabled,
       accessibilityState={{ disabled: !!disabled, busy: !!loading }}
       style={[
         { minHeight: small ? 40 : touch + 4, paddingHorizontal: small ? space.lg : space.xl, borderRadius: radius.pill, backgroundColor: c.bg, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: space.sm, opacity: disabled ? 0.45 : 1 },
-        c.border ? { borderWidth: 1.5, borderColor: c.border } : null,
+        c.border ? { borderWidth: 1, borderColor: c.border } : null,
+        v === 'primary' && !small ? shadow.soft : null,
+        chip ? { paddingLeft: 6, justifyContent: 'flex-start' } : null,
         style,
       ]}
     >
-      {loading ? <ActivityIndicator color={c.fg} /> : icon ? <Icon name={icon} size={small ? 16 : 19} color={c.fg} /> : null}
-      <T v="label" c={c.fg} style={{ fontSize: small ? 13 : 15 }}>{label}</T>
+      {loading ? <ActivityIndicator color={c.fg} /> : chip ? (
+        // Leading icon in its own round chip — the signature button of the design.
+        <View style={{ width: 42, height: 42, borderRadius: 21, backgroundColor: v === 'primary' ? 'rgba(248,247,243,0.14)' : 'rgba(30,42,48,0.08)', alignItems: 'center', justifyContent: 'center' }}>
+          <Icon name={icon!} size={19} color={v === 'primary' ? color.sand : c.fg} />
+        </View>
+      ) : icon ? <Icon name={icon} size={small ? 16 : 19} color={c.fg} /> : null}
+      <T v="label" c={c.fg} numberOfLines={1} style={[{ fontSize: small ? 13 : 15 }, chip ? { flex: 1, textAlign: 'center', marginRight: 16 } : null]}>{label}</T>
     </Press>
   );
 }
 
 export function IconButton({ icon, onPress, label, tone = 'light', size: s = 44 }: { icon: string; onPress?: () => void; label: string; tone?: 'light' | 'dark' | 'glass'; size?: number }) {
-  const bg = tone === 'dark' ? color.ocean : tone === 'glass' ? 'rgba(248,247,243,0.88)' : color.white;
+  const bg = tone === 'dark' ? color.ocean : tone === 'glass' ? 'rgba(250,246,240,0.92)' : color.card;
   return (
-    <Press onPress={onPress} accessibilityLabel={label} hitSlop={6} style={{ width: s, height: s, borderRadius: s / 2, backgroundColor: bg, alignItems: 'center', justifyContent: 'center', borderWidth: tone === 'light' ? 1 : 0, borderColor: color.line }}>
+    <Press onPress={onPress} accessibilityLabel={label} hitSlop={6} style={[{ width: s, height: s, borderRadius: s / 2, backgroundColor: bg, alignItems: 'center', justifyContent: 'center' }, shadow.soft]}>
       <Icon name={icon} size={s * 0.45} color={tone === 'dark' ? color.white : color.ocean} />
     </Press>
   );
@@ -100,8 +108,8 @@ export function Chip({ label, icon, selected, onPress, tone = 'light' }: { label
       accessibilityState={{ checked: !!on }}
       style={{
         minHeight: 44, paddingHorizontal: space.lg, borderRadius: radius.pill, flexDirection: 'row', alignItems: 'center', gap: 6,
-        backgroundColor: on ? color.ocean : tone === 'dark' ? 'rgba(248,247,243,0.12)' : color.white,
-        borderWidth: 1, borderColor: on ? color.ocean : tone === 'dark' ? 'rgba(248,247,243,0.3)' : color.line,
+        backgroundColor: on ? color.ocean : tone === 'dark' ? 'rgba(248,247,243,0.12)' : color.card,
+        borderWidth: 1, borderColor: on ? color.ocean : tone === 'dark' ? 'rgba(248,247,243,0.3)' : color.tileLine,
       }}
     >
       {icon ? <Icon name={icon} size={16} color={fg} /> : null}
@@ -126,7 +134,7 @@ export function SectionHeader({ kicker, title, action, onAction }: { kicker?: st
   return (
     <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', paddingHorizontal: space.xl, marginBottom: space.md }}>
       <View style={{ flex: 1 }}>
-        {kicker ? <T v="kicker" c={color.teal}>{kicker}</T> : null}
+        {kicker ? <T v="kicker" c={color.sandDeep}>{kicker}</T> : null}
         <T v="h2" accessibilityRole="header">{title}</T>
       </View>
       {action ? (
@@ -139,11 +147,22 @@ export function SectionHeader({ kicker, title, action, onAction }: { kicker?: st
 }
 
 export function Card({ children, style, tone = 'white' }: { children: React.ReactNode; style?: StyleProp<ViewStyle>; tone?: 'white' | 'cream' | 'ocean' }) {
-  const bg = tone === 'cream' ? color.cream : tone === 'ocean' ? color.ocean : '#FFFFFF';
-  return <View style={[{ backgroundColor: bg, borderRadius: radius.lg, padding: space.lg, borderWidth: tone === 'white' ? 1 : 0, borderColor: color.line }, style]}>{children}</View>;
+  const bg = tone === 'cream' ? color.tile : tone === 'ocean' ? color.ocean : color.card;
+  return <View style={[{ backgroundColor: bg, borderRadius: radius.lg, padding: space.lg }, tone === 'cream' ? { borderWidth: 1, borderColor: color.tileLine } : shadow.card, style]}>{children}</View>;
 }
 
 export function Divider() { return <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: color.line, marginVertical: space.md }} />; }
+
+/** Square tile with a thin outline icon and a short label (category / interest shortcuts). */
+export function IconTile({ icon, label, onPress, selected }: { icon: string; label: string; onPress?: () => void; selected?: boolean }) {
+  return (
+    <Press onPress={onPress} accessibilityLabel={label} accessibilityState={{ selected: !!selected }}
+      style={[{ width: 84, height: 96, borderRadius: radius.md + 2, backgroundColor: selected ? color.ocean : color.tile, borderWidth: 1, borderColor: selected ? color.ocean : color.tileLine, alignItems: 'center', justifyContent: 'center', gap: 10, paddingHorizontal: 6 }]}>
+      <Icon name={icon} size={28} color={selected ? color.sand : color.ocean} />
+      <T v="micro" c={selected ? color.white : color.inkSoft} numberOfLines={2} style={{ textAlign: 'center' }}>{label}</T>
+    </Press>
+  );
+}
 
 // ── Inputs ──────────────────────────────────────────────────────────────────
 export function Field({ label, style, ...p }: TextInputProps & { label?: string }) {
@@ -153,7 +172,7 @@ export function Field({ label, style, ...p }: TextInputProps & { label?: string 
       <TextInput
         placeholderTextColor={color.gray}
         {...p}
-        style={[{ minHeight: touch + 4, borderRadius: radius.md, borderWidth: 1, borderColor: color.line, backgroundColor: '#FFFFFF', paddingHorizontal: space.lg, fontFamily: font.medium, fontSize: 16, color: color.ink }, style]}
+        style={[{ minHeight: touch + 4, borderRadius: radius.md, borderWidth: 1, borderColor: color.tileLine, backgroundColor: color.card, paddingHorizontal: space.lg, fontFamily: font.body, fontSize: 16, color: color.ink }, style]}
       />
     </View>
   );

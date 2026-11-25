@@ -86,7 +86,7 @@ export default function TripScreen() {
   const mapH = Math.round(Math.min(height * 0.42, 380));
 
   return (
-    <View style={{ flex: 1, backgroundColor: color.white }}>
+    <View style={{ flex: 1, backgroundColor: color.paper }}>
       <MapView
         style={{ height: mapH + insets.top }}
         route={trip.route?.coords}

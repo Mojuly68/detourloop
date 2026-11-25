@@ -203,7 +203,7 @@ export default function ReplayScreen() {
   const shareText = `${replay.title}\n\n${replay.narrative}${replay.shareUrl ? `\n\n${replay.shareUrl}` : ''}`;
 
   return (
-    <View style={{ flex: 1, backgroundColor: color.white }}>
+    <View style={{ flex: 1, backgroundColor: color.paper }}>
       <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 60 }}>
         {/* Cover */}
         <View style={{ height: 460, backgroundColor: color.oceanDeep }}>
@@ -265,7 +265,7 @@ export default function ReplayScreen() {
           ) : (
             <>
               {replay.narrative.split('\n\n').map((p, i) => (
-                <T key={i} v="body" style={i === 0 ? { fontFamily: 'Roboto_700Bold', fontSize: 22, lineHeight: 31 } : { fontSize: 17, lineHeight: 27 }}>{p}</T>
+                <T key={i} v="body" style={i === 0 ? { fontFamily: 'Roboto_300Light', fontSize: 22, lineHeight: 31 } : { fontSize: 17, lineHeight: 27 }}>{p}</T>
               ))}
               <View style={{ flexDirection: 'row', gap: space.sm, flexWrap: 'wrap' }}>
                 <Button small v="secondary" icon="create-outline" label="Edit" onPress={() => { setDraft(replay.narrative); setEditing(true); }} />

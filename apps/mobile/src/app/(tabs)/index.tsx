@@ -13,12 +13,21 @@ import { useLocation } from '@/services/location';
 import { sizedThumb, type WikiSummary } from '@/services/photos';
 import { fmtKm } from '@/services/geo';
 import { color, radius, shadow, space } from '@/theme/tokens';
-import { Button, ErrorState, Pill, Press, SectionHeader, Skeleton, T, useToast } from '@/components/ui/primitives';
+import { Button, ErrorState, IconButton, IconTile, Pill, Press, SectionHeader, Skeleton, T, useToast } from '@/components/ui/primitives';
 import { Photo, WikiCard, useWiki } from '@/components/ui/media';
 import { PlaceSearch } from '@/components/ui/PlaceSearch';
 import { Sheet } from '@/components/ui/Sheet';
 import { ModeBanner } from '@/components/ui/ModeBanner';
 import { TripCard } from '@/components/ui/TripCard';
+
+const QUICK: { icon: string; label: string; interests: string[] }[] = [
+  { icon: 'sunny-outline', label: 'Beaches', interests: ['beaches', 'surfing'] },
+  { icon: 'triangle-outline', label: 'Mountains', interests: ['hiking', 'scenic', 'adventure'] },
+  { icon: 'water-outline', label: 'Waterfalls', interests: ['nature', 'hiking'] },
+  { icon: 'business-outline', label: 'Small towns', interests: ['historic', 'local', 'food'] },
+  { icon: 'bonfire-outline', label: 'Camping', interests: ['camping', 'nature'] },
+  { icon: 'restaurant-outline', label: 'Local food', interests: ['food', 'local'] },
+];
 
 export default function Discover() {
   const { width } = useWindowDimensions();
@@ -57,42 +66,56 @@ export default function Discover() {
   const first = profile?.displayName?.split(' ')[0];
 
   return (
-    <View style={{ flex: 1, backgroundColor: color.white }}>
+    <View style={{ flex: 1, backgroundColor: color.paper }}>
       <Animated.ScrollView onScroll={onScroll} scrollEventThrottle={16} contentContainerStyle={{ paddingBottom: 130 }} keyboardShouldPersistTaps="handled">
         {/* HERO */}
         <View style={{ height: heroH, overflow: 'hidden', backgroundColor: color.oceanDeep }}>
           <Animated.View style={[{ position: 'absolute', top: 0, left: 0, right: 0, height: heroH }, parallax]}>
             <Photo uri={heroImg} label={HERO_WIKI} style={{ flex: 1 }} />
           </Animated.View>
-          <LinearGradient colors={['rgba(12,24,32,0.45)', 'rgba(12,24,32,0.05)', 'rgba(12,24,32,0.85)']} locations={[0, 0.35, 1]} style={StyleSheet.absoluteFill} />
+          {/* Warm sunset wash over the photo, darker only where the text sits. */}
+          <LinearGradient colors={['rgba(255,214,176,0.38)', 'rgba(255,186,140,0.10)', 'rgba(24,30,40,0.62)']} locations={[0, 0.4, 1]} style={StyleSheet.absoluteFill} />
           <View style={{ position: 'absolute', top: insets.top + space.lg, left: space.xl, right: space.xl, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-            <T v="h3" c={color.white} style={{ fontFamily: 'Roboto_700Bold', fontSize: 21, letterSpacing: 0.3 }}>DetourLoop</T>
+            <T v="h3" c={color.white} style={{ fontFamily: 'Roboto_300Light', fontSize: 21, letterSpacing: 0.3 }}>DetourLoop</T>
             <ModeBanner compact dark />
           </View>
-          <View style={{ position: 'absolute', left: space.xl, right: space.xl, bottom: 64, gap: space.md }}>
+          <View style={{ position: 'absolute', left: space.xl, right: space.xl, bottom: 76, gap: space.md }}>
             {first ? <T v="kicker" c={color.sand}>Hello, {first}</T> : null}
             <Animated.View entering={FadeInDown.delay(100).springify().damping(16)}>
               <T v="hero" c={color.white}>Your next adventure starts here.</T>
             </Animated.View>
             <T v="body" c="rgba(248,247,243,0.88)">Discover extraordinary places, unexpected detours, and experiences worth remembering.</T>
-            <View style={{ flexDirection: 'row', gap: space.sm, marginTop: space.sm }}>
-              <Button label="Plan an Adventure" v="sand" icon="sparkles" onPress={() => router.push('/plan')} style={{ flex: 1.15 }} />
-              <Button label="Explore Nearby" v="light" icon="locate" onPress={() => router.push({ pathname: '/explore', params: { nearby: '1' } })} style={{ flex: 1 }} />
+            <View style={{ flexDirection: 'row', gap: space.md, marginTop: space.sm, alignItems: 'center' }}>
+              <Button label="Plan an Adventure" icon="sparkles" onPress={() => router.push('/plan')} style={{ flex: 1 }} />
+              <View style={{ alignItems: 'center', gap: 4 }}>
+                <IconButton icon="locate" label="Explore Nearby" tone="glass" size={52} onPress={() => router.push({ pathname: '/explore', params: { nearby: '1' } })} />
+                <T v="micro" c={color.white} style={{ fontSize: 10 }}>Explore Nearby</T>
+              </View>
             </View>
           </View>
-          {hero ? <T v="micro" c="rgba(248,247,243,0.6)" style={{ position: 'absolute', right: space.md, bottom: 36, fontSize: 9 }}>{hero.title} · Wikimedia Commons</T> : null}
+          {hero ? <T v="micro" c="rgba(248,247,243,0.6)" style={{ position: 'absolute', right: space.md, bottom: 48, fontSize: 9 }}>{hero.title} · Wikimedia Commons</T> : null}
         </View>
 
+        {/* Content panel slides over the photo, like a sheet. */}
+        <View style={{ marginTop: -36, borderTopLeftRadius: radius.xl + 4, borderTopRightRadius: radius.xl + 4, backgroundColor: color.paper, paddingTop: space.xl }}>
+
         {/* SEARCH */}
-        <View style={[{ marginTop: -28, marginHorizontal: space.xl, borderRadius: radius.pill, zIndex: 20 }, shadow.float]}>
+        <View style={[{ marginHorizontal: space.xl, borderRadius: radius.pill, zIndex: 20 }, shadow.card]}>
           <PlaceSearch placeholder="Where do you want to go?" onPick={(p) => router.push({ pathname: '/plan', params: { to: p.name, toLat: String(p.lat), toLng: String(p.lng) } })} />
         </View>
+
+        {/* QUICK INTERESTS — outline icon tiles */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: space.xl, gap: space.sm, paddingTop: space.xl }}>
+          {QUICK.map((q) => (
+            <IconTile key={q.label} icon={q.icon} label={q.label} onPress={() => router.push({ pathname: '/plan', params: { interests: q.interests.join(',') } })} />
+          ))}
+        </ScrollView>
 
         {/* CONTINUE */}
         {upcoming.length ? (
           <Section>
             <SectionHeader kicker="Continue your journey" title="Your trips" action="All" onAction={() => router.push('/journeys')} />
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: space.xl, gap: space.md }}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: space.xl, gap: space.md, paddingTop: 4, paddingBottom: space.xl }}>
               {upcoming.map((t) => <TripCard key={t.id} trip={t} width={w * 0.72} height={200} onPress={() => router.push(`/trip/${t.id}`)} />)}
             </ScrollView>
           </Section>
@@ -101,9 +124,9 @@ export default function Discover() {
         {/* EXPERIENCES */}
         <Section>
           <SectionHeader kicker="Explore by experience" title="What are you in the mood for?" />
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} decelerationRate="fast" snapToInterval={w * 0.46 + space.md} contentContainerStyle={{ paddingHorizontal: space.xl, gap: space.md }}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} decelerationRate="fast" snapToInterval={w * 0.46 + space.md} contentContainerStyle={{ paddingHorizontal: space.xl, gap: space.md, paddingTop: 4, paddingBottom: space.xl }}>
             {EXPERIENCES.map((e) => (
-              <WikiCard key={e.key} wiki={e.wiki} title={e.title} kicker={e.wiki.split(',')[0]} width={w * 0.46} height={250}
+              <WikiCard key={e.key} inset wiki={e.wiki} title={e.title} line={e.wiki.split(',')[0]} width={w * 0.46} height={250}
                 onPress={() => router.push({ pathname: '/plan', params: { interests: e.interests.join(',') } })} />
             ))}
           </ScrollView>
@@ -113,7 +136,7 @@ export default function Discover() {
         <Section>
           <SectionHeader kicker="Near you" title="Worth a short detour" />
           {near === null && !nearBusy ? (
-            <View style={{ marginHorizontal: space.xl, padding: space.xl, borderRadius: radius.lg, backgroundColor: color.cream, gap: space.md }}>
+            <View style={{ marginHorizontal: space.xl, padding: space.xl, borderRadius: radius.lg, backgroundColor: color.tile, borderWidth: 1, borderColor: color.tileLine, gap: space.md }}>
               <T v="bodyStrong">See real places around you</T>
               <T v="small" c={color.inkSoft}>We ask for your location once, only to search nearby. It is not stored or tracked.</T>
               {loc.status === 'denied' ? (
@@ -126,7 +149,7 @@ export default function Discover() {
               )}
             </View>
           ) : nearBusy ? (
-            <ScrollView horizontal contentContainerStyle={{ paddingHorizontal: space.xl, gap: space.md }}>
+            <ScrollView horizontal contentContainerStyle={{ paddingHorizontal: space.xl, gap: space.md, paddingTop: 4, paddingBottom: space.xl }}>
               {[0, 1, 2].map((i) => <Skeleton key={i} w={220} h={200} r={radius.lg} />)}
             </ScrollView>
           ) : nearErr ? (
@@ -134,11 +157,11 @@ export default function Discover() {
           ) : near && near.length === 0 ? (
             <T v="small" c={color.inkSoft} style={{ marginHorizontal: space.xl }}>No mapped places matched your interests within 30 km.</T>
           ) : (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: space.xl, gap: space.md }}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: space.xl, gap: space.md, paddingTop: 4, paddingBottom: space.xl }}>
               {near!.map((d) => (
                 <Press key={d.placeId} onPress={() => router.push({ pathname: '/plan', params: { to: d.name, toLat: String(d.lat), toLng: String(d.lng) } })} accessibilityLabel={`Plan a trip to ${d.name}, ${fmtKm(d.distanceKm)} away`}
-                  style={{ width: 220, borderRadius: radius.lg, overflow: 'hidden', backgroundColor: '#FFF', borderWidth: 1, borderColor: color.line }}>
-                  <Photo uri={d.imageUrl} label={d.name} style={{ height: 130 }} />
+                  style={[{ width: 220, borderRadius: radius.lg, backgroundColor: color.card, padding: 8 }, shadow.card]}>
+                  <Photo uri={d.imageUrl} label={d.name} style={{ height: 130, borderRadius: radius.md }} />
                   <View style={{ padding: space.md, gap: 4 }}>
                     <Pill label={d.categoryLabel} />
                     <T v="bodyStrong" numberOfLines={1}>{d.name}</T>
@@ -158,9 +181,9 @@ export default function Discover() {
         {/* UNEXPECTED */}
         <Section>
           <SectionHeader kicker="Unexpected discoveries" title="Places most people drive past" />
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: space.xl, gap: space.md }}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: space.xl, gap: space.md, paddingTop: 4, paddingBottom: space.xl }}>
             {UNEXPECTED.map((u) => (
-              <WikiCard key={u} wiki={u} title={u.replace(/ \(.*\)$/, '')} width={w * 0.62} height={210} onPress={(s) => s && setSheet(s)} />
+              <WikiCard key={u} inset wiki={u} title={u.replace(/ \(.*\)$/, '')} line="Tap for the story" width={w * 0.56} height={250} onPress={(s) => s && setSheet(s)} />
             ))}
           </ScrollView>
         </Section>
@@ -187,6 +210,7 @@ export default function Discover() {
 
         <View style={{ paddingHorizontal: space.xl, marginTop: space.xxl }}>
           <T v="micro" c={color.gray}>Photos and descriptions: Wikipedia and Wikimedia Commons (CC BY-SA). Places: © OpenStreetMap contributors. Weather: Open-Meteo.</T>
+        </View>
         </View>
       </Animated.ScrollView>
 
@@ -224,10 +248,10 @@ function RoadTripRow({ r }: { r: (typeof ROAD_TRIPS)[number] }) {
   const s = useWiki(r.wiki);
   return (
     <Press onPress={() => router.push({ pathname: '/plan', params: { from: r.from, to: r.to, interests: r.interests.join(','), title: r.title } })} accessibilityLabel={`${r.title}, ${r.from} to ${r.to}`}
-      style={{ flexDirection: 'row', gap: space.md, alignItems: 'center', backgroundColor: '#FFF', borderRadius: radius.lg, padding: space.sm, borderWidth: 1, borderColor: color.line }}>
+      style={[{ flexDirection: 'row', gap: space.md, alignItems: 'center', backgroundColor: color.card, borderRadius: radius.lg, padding: 10 }, shadow.soft]}>
       <Photo uri={s ? sizedThumb(s.thumb, 300) : undefined} label={r.title} style={{ width: 92, height: 92, borderRadius: radius.md }} />
       <View style={{ flex: 1, gap: 2 }}>
-        <T v="h3" style={{ fontFamily: 'Roboto_700Bold', fontSize: 21 }}>{r.title}</T>
+        <T v="h3" style={{ fontFamily: 'Roboto_400Regular', fontSize: 19 }}>{r.title}</T>
         <T v="micro" c={color.teal}>{r.from.split(',')[0]} → {r.to.split(',')[0]}</T>
         <T v="small" c={color.inkSoft} numberOfLines={1}>{r.blurb}</T>
       </View>

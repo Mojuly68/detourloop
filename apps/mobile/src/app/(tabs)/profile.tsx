@@ -61,7 +61,7 @@ export default function ProfileScreen() {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: color.white }}>
+    <View style={{ flex: 1, backgroundColor: color.paper }}>
       <ScrollView contentContainerStyle={{ paddingTop: insets.top + space.xl, paddingBottom: 140, paddingHorizontal: space.xl, gap: space.xl }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.lg }}>
           <Press onPress={pickAvatar} accessibilityLabel="Change profile photo" style={{ width: 76, height: 76, borderRadius: 38, overflow: 'hidden' }}>

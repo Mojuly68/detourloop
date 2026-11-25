@@ -20,21 +20,22 @@ export function DiscoveryCard({
   const nav = navigationLinks(d);
   return (
     <Animated.View entering={FadeInDown.delay(Math.min(index, 8) * 60).springify().damping(18)} layout={LinearTransition.springify().damping(20)}
-      style={[{ backgroundColor: '#FFFFFF', borderRadius: radius.lg, overflow: 'hidden', borderWidth: 1, borderColor: color.line }, shadow.card]}>
+      style={[{ backgroundColor: color.card, borderRadius: radius.lg, padding: 10 }, shadow.card]}>
       <Press onPress={() => setOpen((o) => !o)} scaleTo={0.99} accessibilityLabel={`${d.name}, ${d.categoryLabel}. ${open ? 'Collapse' : 'Expand'} details`} accessibilityState={{ expanded: open }}>
-        <Photo uri={d.imageUrl} label={d.name} icon={cat?.icon} credit={d.imageCredit} style={{ height: compact ? 130 : open ? 220 : 170 }} />
+        <Photo uri={d.imageUrl} label={d.name} icon={cat?.icon} credit={d.imageCredit} style={{ height: compact ? 130 : open ? 220 : 170, borderRadius: radius.md }} />
         <View style={{ position: 'absolute', top: 12, left: 12, flexDirection: 'row', gap: 6 }}>
           <Pill tone="glass" icon={cat?.icon} label={d.categoryLabel} />
         </View>
-        <View style={{ padding: space.lg, gap: space.sm }}>
-          <T v="h3" style={{ fontFamily: 'Roboto_700Bold', fontSize: 23, lineHeight: 27 }} numberOfLines={2}>{d.name}</T>
+        <View style={{ paddingHorizontal: space.sm, paddingTop: space.md, paddingBottom: space.sm, gap: space.sm }}>
+          <T v="h3" style={{ fontFamily: 'Roboto_400Regular', fontSize: 21, lineHeight: 26 }} numberOfLines={2}>{d.name}</T>
+          <View style={{ width: 56, height: 1.5, backgroundColor: color.sand, borderRadius: 1 }} />
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.md }}>
             <Meta icon="navigate-outline" text={`${fmtKm(d.distanceKm)} ${offRouteLabel}`} />
             <Meta icon="car-outline" text={`+${fmtMin(d.detourMin)} est.`} />
             {d.visitMin ? <Meta icon="hourglass-outline" text={`~${fmtMin(d.visitMin)} visit est.`} /> : null}
           </View>
           {d.why ? (
-            <View style={{ gap: 6, backgroundColor: color.cream, padding: space.md, borderRadius: radius.md }}>
+            <View style={{ gap: 6, backgroundColor: color.tile, borderWidth: 1, borderColor: color.tileLine, padding: space.md, borderRadius: radius.md }}>
               <T v="small" c={color.charcoal}>{d.why}</T>
               <SourceTag source={d.whySource ?? 'map-data'} />
             </View>
@@ -57,7 +58,7 @@ export function DiscoveryCard({
         </View>
       </Press>
       {(onAdd || onSave || onDismiss) && (
-        <View style={{ flexDirection: 'row', gap: space.sm, paddingHorizontal: space.lg, paddingBottom: space.lg }}>
+        <View style={{ flexDirection: 'row', gap: space.sm, paddingHorizontal: space.sm, paddingBottom: space.sm, paddingTop: space.sm }}>
           {onAdd ? <Button style={{ flex: 1 }} small icon={added ? 'checkmark' : 'add'} label={added ? 'Added' : 'Add to trip'} v={added ? 'sand' : 'primary'} onPress={added ? undefined : onAdd} /> : null}
           {onSave ? <Button small v="secondary" icon={saved ? 'bookmark' : 'bookmark-outline'} label={saved ? 'Saved' : 'Save'} onPress={onSave} /> : null}
           {onDismiss ? (

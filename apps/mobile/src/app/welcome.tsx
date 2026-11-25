@@ -73,12 +73,12 @@ export default function Welcome() {
         <LinearGradient colors={['rgba(12,24,32,0.15)', 'rgba(12,24,32,0.35)', 'rgba(12,24,32,0.92)']} style={StyleSheet.absoluteFill} />
         <View style={{ flex: 1, justifyContent: 'space-between', paddingTop: insets.top + space.xl, paddingBottom: insets.bottom + space.xxl, paddingHorizontal: space.xl }}>
           <Animated.View entering={FadeInDown.delay(200)} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-            <T v="h3" c={color.sand} style={{ fontFamily: 'Roboto_700Bold', fontSize: 22, letterSpacing: 0.3 }}>DetourLoop</T>
+            <T v="h3" c={color.sand} style={{ fontFamily: 'Roboto_300Light', fontSize: 22, letterSpacing: 0.3 }}>DetourLoop</T>
             <ModeBanner compact dark />
           </Animated.View>
           <View style={{ gap: space.lg }}>
             <Animated.View entering={FadeInUp.delay(350).springify().damping(18)}>
-              <T v="hero" c={color.white} style={{ fontSize: 56, lineHeight: 58 }}>Explore beyond{'\n'}<T v="hero" c={color.sand} style={{ fontSize: 56, lineHeight: 58, fontFamily: 'Roboto_700Bold_Italic' }}>the obvious.</T></T>
+              <T v="hero" c={color.white} style={{ fontSize: 56, lineHeight: 58 }}>Explore beyond{'\n'}<T v="hero" c={color.sand} style={{ fontSize: 56, lineHeight: 58, fontFamily: 'Roboto_300Light_Italic' }}>the obvious.</T></T>
             </Animated.View>
             <Animated.View entering={FadeInUp.delay(550)}>
               <T v="body" c="rgba(248,247,243,0.85)">The best parts of a trip are the places you didn't plan. DetourLoop finds them along your route, then turns the journey into a story you can replay.</T>
@@ -95,7 +95,7 @@ export default function Welcome() {
   }
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, backgroundColor: color.white }}>
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, backgroundColor: color.paper }}>
       <ScrollView contentContainerStyle={{ paddingTop: insets.top + space.lg, paddingBottom: insets.bottom + space.xxxl, paddingHorizontal: space.xl, gap: space.xl }} keyboardShouldPersistTaps="handled">
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
           <Press onPress={() => setStep(step === 3 && mode === 'signin' && interests.length === 0 ? 0 : step - 1)} accessibilityLabel="Back" style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>

@@ -1,5 +1,6 @@
 // DetourLoop design system — tokens.
-// Ocean blue + charcoal carry the interface; sand + cream are the editorial / TravelReplay surfaces.
+// Soft, airy look: warm off-white pages, white cards with large radii and very soft warm shadows,
+// light-weight navy headlines, thin outline icons, navy pill buttons, sand accents.
 
 export const color = {
   ocean: '#183C50',
@@ -18,11 +19,18 @@ export const color = {
   danger: '#A4442F',
   success: '#2F6B4F',
   scrim: 'rgba(12,24,32,0.55)',
+  // surfaces
+  paper: '#F4F1EC',          // page background (warm off-white)
+  card: '#FFFFFF',
+  tile: '#FBF8F3',           // icon tiles, quiet panels
+  tileLine: 'rgba(183,159,120,0.22)',
+  bar: 'rgba(250,246,240,0.97)', // floating tab bar
 } as const;
 
 export const font = {
-  display: 'Roboto_700Bold',
-  displayItalic: 'Roboto_700Bold_Italic',
+  display: 'Roboto_300Light',          // big headlines are thin
+  displayItalic: 'Roboto_300Light_Italic',
+  light: 'Roboto_300Light',
   body: 'Roboto_400Regular',
   medium: 'Roboto_500Medium',
   semibold: 'Roboto_600SemiBold',
@@ -30,9 +38,9 @@ export const font = {
 } as const;
 
 export const size = {
-  hero: 44,
-  h1: 34,
-  h2: 26,
+  hero: 46,
+  h1: 36,
+  h2: 27,
   h3: 20,
   body: 16,
   small: 14,
@@ -40,22 +48,30 @@ export const size = {
 } as const;
 
 export const space = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32, xxxl: 48 } as const;
-export const radius = { sm: 10, md: 16, lg: 22, xl: 28, pill: 999 } as const;
+export const radius = { sm: 12, md: 18, lg: 26, xl: 34, pill: 999 } as const;
 
 export const shadow = {
+  // Soft, warm, wide shadows — cards should look like they float on paper, not cast hard edges.
   card: {
-    shadowColor: '#0F2A38',
-    shadowOpacity: 0.14,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: 10 },
-    elevation: 6,
+    shadowColor: '#7A6648',
+    shadowOpacity: 0.1,
+    shadowRadius: 26,
+    shadowOffset: { width: 0, height: 12 },
+    elevation: 4,
   },
   float: {
-    shadowColor: '#0F2A38',
-    shadowOpacity: 0.22,
-    shadowRadius: 28,
-    shadowOffset: { width: 0, height: 14 },
-    elevation: 12,
+    shadowColor: '#7A6648',
+    shadowOpacity: 0.16,
+    shadowRadius: 34,
+    shadowOffset: { width: 0, height: 16 },
+    elevation: 10,
+  },
+  soft: {
+    shadowColor: '#7A6648',
+    shadowOpacity: 0.07,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 2,
   },
 } as const;
 

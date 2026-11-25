@@ -95,7 +95,7 @@ export default function Plan() {
   const toggle = (k: Interest) => setInterests((a) => (a.includes(k) ? a.filter((x) => x !== k) : [...a, k]));
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, backgroundColor: color.white }}>
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, backgroundColor: color.paper }}>
       <View style={{ paddingTop: insets.top + space.sm, paddingHorizontal: space.lg, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
         <Press onPress={() => router.back()} accessibilityLabel="Close" style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}><Icon name="close" size={24} /></Press>
         <T v="kicker" c={color.teal}>New adventure</T>

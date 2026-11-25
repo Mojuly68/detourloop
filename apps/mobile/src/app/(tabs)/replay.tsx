@@ -25,7 +25,7 @@ export default function ReplayTab() {
   }, [done.length]); // eslint-disable-line
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: color.white }} contentContainerStyle={{ paddingTop: insets.top + space.xl, paddingBottom: 140, gap: space.xl }}>
+    <ScrollView style={{ flex: 1, backgroundColor: color.paper }} contentContainerStyle={{ paddingTop: insets.top + space.xl, paddingBottom: 140, gap: space.xl }}>
       <View style={{ paddingHorizontal: space.xl, gap: 6 }}>
         <T v="kicker" c={color.teal}>TravelReplay</T>
         <T v="h1">Every journey deserves a story.</T>

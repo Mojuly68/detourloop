@@ -160,7 +160,7 @@ export default function Explore() {
   const mapH = Math.round(height * (active ? 0.44 : 0.38));
 
   return (
-    <View style={{ flex: 1, backgroundColor: color.white }}>
+    <View style={{ flex: 1, backgroundColor: color.paper }}>
       <MapView style={{ height: mapH }} route={active?.route?.coords} routeStyle={active?.route?.source === 'straight-line' ? 'dashed' : 'solid'} markers={markers}
         fitKey={`${active?.id ?? 'none'}:${active?.stops.length ?? 0}:${here ? 'h' : ''}`} center={here ? [here.lng, here.lat] : active ? [active.origin.lng, active.origin.lat] : undefined} zoom={here && !active ? 11 : 6} />
       <View style={{ position: 'absolute', top: insets.top + space.md, left: space.lg, right: space.lg, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>

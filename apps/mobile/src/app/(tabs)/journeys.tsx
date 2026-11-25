@@ -33,7 +33,7 @@ export default function Journeys() {
   const count = (k: Tab) => (k === 'saved' ? saved.length : trips.filter((t) => (k === 'upcoming' ? t.status === 'planned' : k === 'active' ? t.status === 'active' : t.status === 'completed')).length);
 
   return (
-    <View style={{ flex: 1, backgroundColor: color.white }}>
+    <View style={{ flex: 1, backgroundColor: color.paper }}>
       <ScrollView contentContainerStyle={{ paddingTop: insets.top + space.xl, paddingBottom: 140, gap: space.lg }} stickyHeaderIndices={[1]}>
         <View style={{ paddingHorizontal: space.xl, flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' }}>
           <View><T v="kicker" c={color.teal}>My journeys</T><T v="h1">Your travel library</T></View>
