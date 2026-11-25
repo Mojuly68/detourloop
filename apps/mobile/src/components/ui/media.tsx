@@ -6,6 +6,7 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { color, radius, shadow, space } from '@/theme/tokens';
 import { sizedThumb, smallerThumb, wikiSummary, type WikiSummary } from '@/services/photos';
+import { imageSource } from '@/services/http';
 import { Icon, Press, Skeleton, T } from './primitives';
 
 export function useWiki(ref?: string) {
@@ -35,7 +36,7 @@ export function Photo({ uri, style, label, icon, credit, contentFit = 'cover' }:
   if (!src || failed) return <Placeholder label={label} icon={icon} style={style} />;
   return (
     <View style={[{ overflow: 'hidden', backgroundColor: color.ocean }, style]}>
-      <Image source={{ uri: src }} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} contentFit={contentFit} transition={350}
+      <Image source={imageSource(src)} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} contentFit={contentFit} transition={350}
         onError={() => { const s = smallerThumb(src); if (s && s !== src) setSrc(s); else setFailed(true); }} accessibilityLabel={label} />
       {credit ? (
         <View style={{ position: 'absolute', right: 8, bottom: 6, backgroundColor: 'rgba(15,42,56,0.5)', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 }}>

@@ -5,6 +5,7 @@
 import type { Discovery, Interest, LngLat, Transport } from '@/data/types';
 import { distanceToLineKm, estimateDetourMin, haversineKm, samplePoints } from './geo';
 import { sizedThumb, wikiSummary, wikidataImage } from './photos';
+import { xfetch } from './http';
 
 const OVERPASS = ['https://overpass-api.de/api/interpreter', 'https://overpass.private.coffee/api/interpreter', 'https://overpass.kumi.systems/api/interpreter'];
 
@@ -72,7 +73,7 @@ async function overpass(query: string, signal?: AbortSignal, ms = 22000): Promis
   try {
     return await Promise.any(
       OVERPASS.map(async (url, i) => {
-        const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'data=' + encodeURIComponent(query), signal: ctls[i].signal });
+        const r = await xfetch(url, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'data=' + encodeURIComponent(query), signal: ctls[i].signal });
         if (!r.ok) throw new Error(`Overpass ${r.status}`);
         const j = await r.json();
         return (j.elements ?? []) as any[];
@@ -105,7 +106,7 @@ const WIKI_SKIP = /school|university|college|hospital|airport|station|company|co
 
 async function wikiGeo(p: { lat: number; lng: number }, radiusM: number, signal?: AbortSignal): Promise<any[]> {
   const u = `https://en.wikipedia.org/w/api.php?action=query&format=json&origin=*&generator=geosearch&ggscoord=${p.lat.toFixed(5)}|${p.lng.toFixed(5)}&ggsradius=${Math.min(10000, Math.max(100, radiusM))}&ggslimit=40&prop=coordinates|pageimages|description|extracts&exintro=1&explaintext=1&exsentences=2&exlimit=40&piprop=thumbnail&pithumbsize=500`;
-  const r = await fetch(u, { signal });
+  const r = await xfetch(u, { signal });
   if (!r.ok) return [];
   const j = await r.json();
   return Object.values(j.query?.pages ?? {});

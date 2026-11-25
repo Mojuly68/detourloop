@@ -7,6 +7,7 @@ import Animated, { Easing, FadeIn, FadeOut, useAnimatedStyle, useSharedValue, wi
 import { LinearGradient } from 'expo-linear-gradient';
 import { Image } from 'expo-image';
 import type { Media, Stop, Trip } from '@/data/types';
+import { imageSource } from '@/services/http';
 import { color, space } from '@/theme/tokens';
 import { IconButton, T } from '@/components/ui/primitives';
 
@@ -75,7 +76,7 @@ export function ReplayPlayer({ visible, onClose, trip, media, template, aspect, 
           <Animated.View key={i} entering={FadeIn.duration(500)} exiting={FadeOut.duration(400)} style={StyleSheet.absoluteFill}>
             {s.kind === 'photo' && s.uri ? (
               <Animated.View style={[StyleSheet.absoluteFill, kb]}>
-                <Image source={{ uri: s.uri }} style={StyleSheet.absoluteFill} contentFit="cover" />
+                <Image source={imageSource(s.uri)} style={StyleSheet.absoluteFill} contentFit="cover" />
               </Animated.View>
             ) : null}
             {s.kind === 'photo' ? <LinearGradient colors={['transparent', 'rgba(0,0,0,0.7)']} style={[StyleSheet.absoluteFill, { top: '45%' }]} /> : null}

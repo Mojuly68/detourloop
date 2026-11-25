@@ -1,6 +1,7 @@
 // Place search. Mapbox Geocoding with a token; otherwise Photon (Komoot, OpenStreetMap data, fair use).
 import type { Place } from '@/data/types';
 import { config } from './config';
+import { xfetch } from './http';
 
 export async function searchPlaces(query: string, near?: { lat: number; lng: number }, signal?: AbortSignal): Promise<Place[]> {
   const q = query.trim();
@@ -9,7 +10,7 @@ export async function searchPlaces(query: string, near?: { lat: number; lng: num
   if (config.mapboxToken) {
     try {
       const prox = near ? `&proximity=${near.lng},${near.lat}` : '';
-      const r = await fetch(
+      const r = await xfetch(
         `https://api.mapbox.com/search/geocode/v6/forward?q=${encodeURIComponent(q)}&limit=6${prox}&access_token=${config.mapboxToken}`,
         { signal },
       );
@@ -28,7 +29,7 @@ export async function searchPlaces(query: string, near?: { lat: number; lng: num
   }
 
   const bias = near ? `&lat=${near.lat}&lon=${near.lng}` : '';
-  const r = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=6&lang=en${bias}`, { signal });
+  const r = await xfetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=6&lang=en${bias}`, { signal });
   if (!r.ok) throw new Error(`Search failed (${r.status})`);
   const j = await r.json();
   const seen = new Set<string>();
@@ -49,7 +50,7 @@ export async function searchPlaces(query: string, near?: { lat: number; lng: num
 
 export async function reverseGeocode(lat: number, lng: number): Promise<Place> {
   try {
-    const r = await fetch(`https://photon.komoot.io/reverse?lat=${lat}&lon=${lng}&lang=en`);
+    const r = await xfetch(`https://photon.komoot.io/reverse?lat=${lat}&lon=${lng}&lang=en`);
     const j = await r.json();
     const p = j.features?.[0]?.properties;
     if (p) return { name: p.city ?? p.name ?? 'Current location', context: [p.state, p.country].filter(Boolean).join(', '), lat, lng };

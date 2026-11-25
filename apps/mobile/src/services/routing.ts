@@ -4,6 +4,7 @@
 import type { LngLat, Place, Route, Transport } from '@/data/types';
 import { config } from './config';
 import { haversineKm, lineLengthKm, samplePoints, AVG_KMH } from './geo';
+import { xfetch } from './http';
 
 const OSRM: Record<Transport, string> = {
   driving: 'https://routing.openstreetmap.de/routed-car/route/v1/driving',
@@ -15,7 +16,7 @@ async function fetchJson(url: string, ms = 15000) {
   const ctl = new AbortController();
   const t = setTimeout(() => ctl.abort(), ms);
   try {
-    const r = await fetch(url, { signal: ctl.signal });
+    const r = await xfetch(url, { signal: ctl.signal });
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     return await r.json();
   } finally {

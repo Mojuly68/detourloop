@@ -1,3 +1,4 @@
+import { xfetch } from './http';
 // Current weather from Open-Meteo (free, no key, CC BY 4.0).
 export interface Weather {
   tempC: number;
@@ -20,7 +21,7 @@ const LABEL: [number[], string, string][] = [
 ];
 
 export async function getWeather(lat: number, lng: number): Promise<Weather> {
-  const r = await fetch(
+  const r = await xfetch(
     `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,weather_code,wind_speed_10m,is_day&daily=sunset&timezone=auto&forecast_days=1`,
   );
   if (!r.ok) throw new Error('Weather unavailable');

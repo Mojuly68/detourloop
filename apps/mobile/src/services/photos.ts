@@ -1,3 +1,4 @@
+import { xfetch } from './http';
 // Real, licensed imagery and summaries from Wikipedia / Wikimedia Commons (CC BY-SA / public domain).
 // Every image carries a credit line. If a place has no Wikipedia/Wikidata link, it gets no photo —
 // the UI shows a designed placeholder instead of an unrelated stock image.
@@ -23,7 +24,7 @@ export function wikiSummary(ref: string): Promise<WikiSummary | null> {
     const lang = m ? m[1] : 'en';
     const title = (m ? m[2] : ref).trim().replace(/ /g, '_');
     try {
-      const r = await fetch(`https://${lang}.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}?redirect=true`);
+      const r = await xfetch(`https://${lang}.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}?redirect=true`);
       if (!r.ok) return null;
       const j = await r.json();
       if (j.type === 'disambiguation') return null;
@@ -48,7 +49,7 @@ export function wikiSummary(ref: string): Promise<WikiSummary | null> {
 /** Image for a Wikidata item (property P18) via Commons. */
 export async function wikidataImage(qid: string): Promise<string | null> {
   try {
-    const r = await fetch(`https://www.wikidata.org/wiki/Special:EntityData/${qid}.json`);
+    const r = await xfetch(`https://www.wikidata.org/wiki/Special:EntityData/${qid}.json`);
     if (!r.ok) return null;
     const j = await r.json();
     const file = j.entities?.[qid]?.claims?.P18?.[0]?.mainsnak?.datavalue?.value;
