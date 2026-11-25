@@ -42,7 +42,9 @@ workflows:
           # arm64 only: every Android phone from the last ~8 years; halves native compile time
           ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a
     artifacts:
-      - apps/mobile/android/app/build/outputs/apk/release/*.apk
+      # Paths resolve from working_directory (apps/mobile); the ** pattern is a fallback.
+      - android/app/build/outputs/apk/release/*.apk
+      - '**/build/outputs/apk/release/*.apk'
     # To get the download link by email after each build, uncomment and add your address:
     # publishing:
     #   email:
@@ -85,7 +87,8 @@ workflows:
             --workspace "ios/$XCODE_WORKSPACE" \
             --scheme "$XCODE_SCHEME"
     artifacts:
-      - apps/mobile/build/ios/ipa/*.ipa
+      - build/ios/ipa/*.ipa
+      - '**/build/ios/ipa/*.ipa'
       - /tmp/xcodebuild_logs/*.log
     publishing:
       app_store_connect:
