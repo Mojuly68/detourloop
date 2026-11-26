@@ -4,7 +4,7 @@ import { Linking, ScrollView, View, useWindowDimensions , StyleSheet } from 'rea
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Image } from 'expo-image';
-import Animated, { FadeInDown, interpolate, useAnimatedScrollHandler, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
+import Animated, { interpolate, useAnimatedScrollHandler, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { Discovery } from '@/data/types';
 import { useStore } from '@/state/store';
@@ -65,7 +65,6 @@ export default function Discover() {
   }
 
   const upcoming = trips.filter((t) => t.status !== 'completed').slice(0, 5);
-  const first = profile?.displayName?.split(' ')[0];
 
   return (
     <View style={{ flex: 1, backgroundColor: color.paper }}>
@@ -75,21 +74,14 @@ export default function Discover() {
             a long, calm band of open sky to sit on. */}
         <View style={{ height: heroH, overflow: 'hidden', backgroundColor: HERO.sky }}>
           <Animated.View style={[{ position: 'absolute', top: HERO_SKY_EXTRA, left: 0, right: 0, height: heroH - HERO_SKY_EXTRA + 40 }, parallax]}>
-            <Photo uri={HERO.uri} label={HERO.place} style={{ flex: 1, backgroundColor: HERO.sky }} />
-            <LinearGradient colors={[HERO.sky, 'rgba(46,154,225,0)']} style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 70 }} />
+            <Image source={HERO.source} accessibilityLabel={HERO.label} contentFit="cover" contentPosition="center" style={{ flex: 1, backgroundColor: HERO.sky }} />
+            <LinearGradient colors={[HERO.sky, `${HERO.sky}00`]} style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 70 }} />
           </Animated.View>
-          {/* Light wash on the sky for the headline, deeper at the bottom for the buttons. */}
-          <LinearGradient colors={['rgba(6,34,60,0.30)', 'rgba(6,34,60,0.04)', 'rgba(6,34,60,0)', 'rgba(8,22,32,0.5)']} locations={[0, 0.45, 0.62, 1]} style={StyleSheet.absoluteFill} />
+          {/* Light wash behind the status bar and logo only; deeper at the bottom for the buttons. */}
+          <LinearGradient colors={['rgba(46,26,14,0.32)', 'rgba(46,26,14,0)', 'rgba(46,26,14,0)', 'rgba(20,12,8,0.45)']} locations={[0, 0.22, 0.6, 1]} style={StyleSheet.absoluteFill} />
           <View style={{ position: 'absolute', top: insets.top + space.md, left: space.xl, right: space.xl, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
             <View>{/* keeps the logo on the right when there is no demo banner */}<ModeBanner compact dark /></View>
             <Image source={require('../../../assets/icon.png')} style={{ width: 36, height: 36, borderRadius: 9 }} accessibilityLabel="DetourLoop" />
-          </View>
-          {/* Headline sits on the open sky, where nothing competes with it. */}
-          <View style={{ position: 'absolute', top: insets.top + 72, left: space.xl, right: space.xl, gap: 6 }}>
-            {first ? <T v="kicker" c="rgba(248,247,243,0.92)">Hello, {first}</T> : null}
-            <Animated.View entering={FadeInDown.delay(100).springify().damping(16)}>
-              <T v="hero" c={color.white} style={{ fontSize: 30, lineHeight: 34, letterSpacing: -0.6, maxWidth: 300, textShadowColor: 'rgba(6,34,60,0.3)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 10 }}>Your next adventure starts here.</T>
-            </Animated.View>
           </View>
           <View style={{ position: 'absolute', left: space.xl, right: space.xl, bottom: 40, flexDirection: 'row', gap: space.sm }}>
             <Button label="Plan a trip" icon="sparkles" onPress={() => router.push('/plan')} style={{ flex: 1 }} />
@@ -210,7 +202,7 @@ export default function Discover() {
         </Section>
 
         <View style={{ paddingHorizontal: space.xl, marginTop: space.xxl }}>
-          <T v="micro" c={color.gray}>Photos and descriptions: Wikipedia and Wikimedia Commons (CC BY-SA). Cover: {HERO.place}, {HERO.credit}. Places: © OpenStreetMap contributors. Weather: Open-Meteo.</T>
+          <T v="micro" c={color.gray}>Photos and descriptions: Wikipedia and Wikimedia Commons (CC BY-SA). Places: © OpenStreetMap contributors. Weather: Open-Meteo.</T>
         </View>
         </View>
       </Animated.ScrollView>

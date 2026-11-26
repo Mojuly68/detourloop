@@ -55,9 +55,18 @@ Web build of the mobile app (optional, e.g. for a browser beta): `npx expo expor
 
 ## 4. Payments
 
-**Stripe (web)**: create two recurring prices ($7.99/month, $59.99/year), set `STRIPE_PRICE_PLUS_MONTHLY` / `STRIPE_PRICE_PLUS_ANNUAL`, and add a webhook to `https://<web>/api/stripe-webhook` for `customer.subscription.created|updated|deleted`; put its signing secret in `STRIPE_WEBHOOK_SECRET`.
+**Stripe (web)**: create two recurring prices ($2.25/month, $24/year), set `STRIPE_PRICE_PLUS_MONTHLY` / `STRIPE_PRICE_PLUS_ANNUAL`, and add a webhook to `https://<web>/api/stripe-webhook` for `customer.subscription.created|updated|deleted`; put its signing secret in `STRIPE_WEBHOOK_SECRET`.
 
-**RevenueCat (iOS/Android)**: create products `detourloop_plus_monthly` and `detourloop_plus_annual`, entitlement `plus`. Install `react-native-purchases` (`npx expo install react-native-purchases`, needs a development build), call `Purchases.configure` with the public SDK key, and replace the RevenueCat branch in `src/services/subscriptions.ts`. Add a RevenueCat webhook (an Edge Function) that upserts `subscriptions` and `profiles.subscription_status`, like the Stripe one.
+**RevenueCat (iOS/Android)**: the SDK (`react-native-purchases`) is installed and wired in `src/services/revenuecat.native.ts` (the web uses Stripe instead). It needs a native build (Codemagic / EAS); in Expo Go it runs in RevenueCat's preview mode.
+
+1. **App Store Connect** → DetourLoop → Monetization → Subscriptions: create a subscription group "DetourLoop Plus" with two auto-renewable products, `detourloop_plus_monthly` (1 month) and `detourloop_plus_annual` (1 year). Fill in price, display name and a review screenshot. Accept the Paid Apps agreement (Business section) or the store returns no products.
+2. **RevenueCat** → add the iOS app (bundle ID `com.detourloop.app`) with an **In-App Purchase Key** (App Store Connect → Users and Access → Integrations → In-App Purchase). Import both products.
+3. **Entitlement** `plus` with both products attached. **Offering** `default` (current) with the packages **Monthly** (`$rc_monthly` → monthly product) and **Annual** (`$rc_annual` → annual product). The paywall reads these two packages and shows the store's localised prices.
+4. **Custom URL scheme** (app settings): `detourloop`.
+5. **Public SDK key** (`appl_…`, Project → API keys) → `EXPO_PUBLIC_REVENUECAT_IOS_KEY` in the Codemagic build environment (`vars:` of `ios-testflight`, or a variable group). It is a public key, safe in the app. Android: same with `goog_…` → `EXPO_PUBLIC_REVENUECAT_ANDROID_KEY` and a Google Play service account in RevenueCat.
+6. **Webhook** (cloud mode only): `supabase functions deploy revenuecat-webhook --no-verify-jwt`, `supabase secrets set REVENUECAT_WEBHOOK_AUTH="Bearer <long random string>"`, then RevenueCat → Integrations → Webhooks with the function URL and the same Authorization value. It updates `subscriptions` and `profiles.subscription_status`. Migration `20261126000000_protect_subscription_status.sql` makes that column writable only by the webhooks.
+
+Testing: TestFlight purchases use Apple's sandbox and are never charged. Sandbox subscriptions renew every few minutes (a month ≈ 5 min) and stop after a few renewals. The paywall's **Restore purchases** button and the auto-renewal text are required by App Review. Before release, publish a privacy policy at `EXPO_PUBLIC_WEB_URL/privacy` (the paywall links to it when the web URL is set).
 
 ## 5. Video render worker
 

@@ -12,7 +12,7 @@ import { useStore } from '@/state/store';
 import { ReplayStoryService } from '@/services/ai';
 import { distanceToLineKm, fmtKm, fmtMin } from '@/services/geo';
 import { pickAndAdd } from '@/services/media';
-import { hasEntitlement } from '@/services/subscriptions';
+import { hasEntitlement, usePlan } from '@/services/subscriptions';
 import { isCloud } from '@/services/config';
 import { callFunction } from '@/services/supabase';
 import { categoryByKey } from '@/services/places';
@@ -28,6 +28,7 @@ import { ReplayPlayer, TEMPLATES, type Aspect, type Template } from '@/component
 export default function ReplayScreen() {
   const { id, fresh } = useLocalSearchParams<{ id: string; fresh?: string }>();
   const { trips, profile } = useStore();
+  usePlan(profile); // re-render when a purchase or restore changes the plan
   const trip = trips.find((t) => t.id === id);
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();

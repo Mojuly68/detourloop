@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Platform, View } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -6,7 +6,9 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useFonts } from 'expo-font';
 import { Roboto_300Light, Roboto_300Light_Italic, Roboto_400Regular, Roboto_500Medium, Roboto_600SemiBold, Roboto_700Bold } from '@expo-google-fonts/roboto';
-import { StoreProvider } from '@/state/store';
+import { StoreProvider, useStore } from '@/state/store';
+import { initPurchases } from '@/services/subscriptions';
+import { isCloud } from '@/services/config';
 import { color } from '@/theme/tokens';
 import { Loading } from '@/components/ui/primitives';
 
@@ -17,6 +19,7 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <StoreProvider>
+          <PurchasesBridge />
           <StatusBar style="dark" />
           <View style={Platform.OS === 'web' ? { flex: 1, backgroundColor: '#E7E2D9' } : { flex: 1 }}>
             {/* On wide web screens the app is shown at phone width: it is a mobile product. */}
@@ -35,4 +38,12 @@ export default function RootLayout() {
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
+}
+
+/** Starts RevenueCat once a profile exists (no-op on web or without a key). */
+function PurchasesBridge() {
+  const { profile } = useStore();
+  const id = profile?.id;
+  useEffect(() => { if (id) initPurchases(isCloud ? id : undefined).catch(() => {}); }, [id]);
+  return null;
 }

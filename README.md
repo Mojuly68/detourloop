@@ -30,7 +30,7 @@ detour/
 | End trip → "Your adventure is ready to replay" → Replay | ✅ animated route map, stats, story, memory cards, timeline, media editor |
 | Film preview (5 templates, 16:9 / 9:16 / 1:1) | ✅ on-device preview; **file export needs the render worker** |
 | Share link (private / unlisted / public, revoke) | ⚙️ needs Supabase + deployed web app (code complete, not run against a live project) |
-| Paywall, plans from remote config, entitlement checks | ✅ UI and gating; **purchases need RevenueCat / Stripe keys** |
+| Paywall, plans from remote config, entitlement checks | ✅ RevenueCat SDK wired (iOS/Android), Stripe on web; **purchases need keys** |
 | Export data (JSON), delete account | ✅ |
 
 Nothing pretends: estimates say "est.", data sources are named, AI output is labelled "AI-generated", non-AI text says "not AI", and a video is never shown as rendered unless the render service finished it.

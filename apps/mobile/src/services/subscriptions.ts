@@ -1,24 +1,53 @@
-// Subscription management. Prices come from the `app_config` table (remote config) with
-// launch defaults as fallback. Purchases go through RevenueCat (mobile) or Stripe Checkout (web).
-// Neither SDK is wired into this build yet: purchase() says so honestly instead of pretending.
+// Subscription management. Prices for display come from the store (RevenueCat) on iOS/Android,
+// otherwise from the `app_config` table (remote config) with launch defaults as fallback.
+// Purchases: RevenueCat on iOS/Android, Stripe Checkout on the web. With no keys, purchase()
+// says so honestly and charges nothing.
 //
-// To enable:
-//   Mobile: `npx expo install react-native-purchases`, set EXPO_PUBLIC_REVENUECAT_*_KEY, configure
-//           entitlement "plus" with products detourloop_plus_monthly / detourloop_plus_annual, and point the
-//           RevenueCat webhook at a function that updates `subscriptions` + `profiles.subscription_status`.
-//   Web:    a Stripe Checkout session from the Next.js API route (apps/web/src/app/api/checkout) and a
-//           webhook that does the same updates. See docs/DEPLOYMENT.md.
+// The plan the app trusts:
+//   - RevenueCat's customer info on the device (entitlement "plus"), as soon as it is known;
+//   - otherwise profile.plan, which in cloud mode is set only by the RevenueCat / Stripe webhooks.
+import { useSyncExternalStore } from 'react';
 import { Platform } from 'react-native';
 import type { Profile } from '@/data/types';
 import { config } from './config';
 import { supabase } from './supabase';
+import { rcAvailable, rcInit, rcPackages, rcPlan, rcPurchase, rcRestore, type Plan, type StorePackage } from './revenuecat';
+
+export type { Plan, StorePackage };
+
+// ── Live plan from the store ────────────────────────────────────────────────
+let storePlan: Plan | null = null;
+const listeners = new Set<() => void>();
+function setStorePlan(p: Plan | null) {
+  if (p === storePlan) return;
+  storePlan = p;
+  listeners.forEach((l) => l());
+}
+const subscribe = (l: () => void) => { listeners.add(l); return () => { listeners.delete(l); }; };
+
+/** The plan to show and enforce: the store's answer when known, else the profile's. */
+export function effectivePlan(p: Profile | null): Plan {
+  return storePlan ?? p?.plan ?? 'free';
+}
+/** Re-renders when the store reports a change (purchase, restore, renewal, expiry). */
+export function usePlan(p: Profile | null): Plan {
+  useSyncExternalStore(subscribe, () => storePlan, () => storePlan);
+  return effectivePlan(p);
+}
+
+/** Call once a profile exists. Cloud mode passes the account id so purchases follow the account. */
+export async function initPurchases(accountId?: string) {
+  if (!rcAvailable) return;
+  await rcInit(accountId, setStorePlan);
+  setStorePlan(await rcPlan());
+}
 
 export interface PlanInfo { id: 'free' | 'plus' | 'annual'; price: number; currency: string; period: 'month' | 'year' | null; aiPerDay: number; activeTrips: number; mediaMb: number; }
 
 export const DEFAULT_PLANS: PlanInfo[] = [
   { id: 'free', price: 0, currency: 'USD', period: null, aiPerDay: 10, activeTrips: 3, mediaMb: 500 },
-  { id: 'plus', price: 7.99, currency: 'USD', period: 'month', aiPerDay: 200, activeTrips: 50, mediaMb: 20000 },
-  { id: 'annual', price: 59.99, currency: 'USD', period: 'year', aiPerDay: 200, activeTrips: 50, mediaMb: 20000 },
+  { id: 'plus', price: 2.25, currency: 'USD', period: 'month', aiPerDay: 200, activeTrips: 50, mediaMb: 20000 },
+  { id: 'annual', price: 24, currency: 'USD', period: 'year', aiPerDay: 200, activeTrips: 50, mediaMb: 20000 },
 ];
 
 export async function loadPlans(): Promise<PlanInfo[]> {
@@ -49,16 +78,21 @@ export type Feature = 'ai_story' | 'premium_templates' | 'hq_export' | 'many_tri
 /** Entitlement check. Never gates access to the user's own data — only extra capabilities. */
 export function hasEntitlement(p: Profile | null, f: Feature) {
   void f; // every listed feature is a Plus feature today; per-feature rules can branch here
-  return p?.plan === 'plus' || p?.plan === 'annual';
+  const plan = effectivePlan(p);
+  return plan === 'plus' || plan === 'annual';
 }
 
 export function purchasesConfigured() {
-  if (Platform.OS === 'ios') return Boolean(config.revenueCatIosKey);
-  if (Platform.OS === 'android') return Boolean(config.revenueCatAndroidKey);
-  return Boolean(config.webUrl && supabase);
+  if (Platform.OS === 'web') return Boolean(config.webUrl && supabase);
+  return rcAvailable;
 }
 
-export async function purchase(plan: 'plus' | 'annual'): Promise<{ ok: boolean; message: string }> {
+/** Store packages with localised prices (empty on web or without a RevenueCat key). */
+export function storePackages(): Promise<StorePackage[]> {
+  return rcPackages().catch(() => []);
+}
+
+export async function purchase(plan: 'plus' | 'annual', packages: StorePackage[] = []): Promise<{ ok: boolean; message: string; cancelled?: boolean }> {
   if (!purchasesConfigured()) {
     return { ok: false, message: 'Purchases are not set up in this build. Add RevenueCat (mobile) or Stripe (web) keys — see docs/DEPLOYMENT.md. No charge was made.' };
   }
@@ -74,5 +108,22 @@ export async function purchase(plan: 'plus' | 'annual'): Promise<{ ok: boolean; 
     if (url) (globalThis as any).location.href = url;
     return { ok: true, message: 'Opening secure checkout…' };
   }
-  return { ok: false, message: 'RevenueCat keys are set but the react-native-purchases SDK is not installed in this build yet. No charge was made.' };
+  const pkg = packages.find((x) => x.plan === plan) ?? (await storePackages()).find((x) => x.plan === plan);
+  if (!pkg) return { ok: false, message: 'This plan is not available from the store right now. No charge was made.' };
+  const r = await rcPurchase(pkg);
+  if (r.cancelled) return { ok: false, cancelled: true, message: '' };
+  if (r.error) return { ok: false, message: `${r.error} No charge was made.` };
+  setStorePlan(r.plan);
+  return r.plan === 'free'
+    ? { ok: false, message: 'The store did not confirm the subscription. If you were charged, use Restore purchases.' }
+    : { ok: true, message: 'Welcome to DetourLoop Plus.' };
+}
+
+export async function restorePurchases(): Promise<{ ok: boolean; message: string }> {
+  const r = await rcRestore();
+  if (r.error) return { ok: false, message: r.error };
+  setStorePlan(r.plan);
+  return r.plan === 'free'
+    ? { ok: false, message: 'No active DetourLoop Plus subscription was found for this Apple / Google account.' }
+    : { ok: true, message: 'Your Plus subscription is restored.' };
 }

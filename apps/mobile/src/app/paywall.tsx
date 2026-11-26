@@ -1,12 +1,14 @@
-// Paywall. Prices load from remote config (app_config) with launch defaults.
+// Paywall. On iOS/Android prices come from the store via RevenueCat (localised, what the user
+// will actually pay); otherwise from remote config (app_config) with launch defaults.
 // Purchases only happen through RevenueCat / Stripe; without them we say so and charge nothing.
 import React, { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Linking, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useStore } from '@/state/store';
-import { DEFAULT_PLANS, PLUS_FEATURES, loadPlans, purchase, purchasesConfigured, type PlanInfo } from '@/services/subscriptions';
+import { DEFAULT_PLANS, PLUS_FEATURES, loadPlans, purchase, purchasesConfigured, restorePurchases, storePackages, usePlan, type PlanInfo, type StorePackage } from '@/services/subscriptions';
+import { config } from '@/services/config';
 import { color, radius, space } from '@/theme/tokens';
 import { Button, Icon, IconButton, Press, T } from '@/components/ui/primitives';
 import { Photo, useWiki } from '@/components/ui/media';
@@ -19,20 +21,37 @@ export default function Paywall() {
   const [plans, setPlans] = useState<PlanInfo[]>(DEFAULT_PLANS);
   const [pick, setPick] = useState<'plus' | 'annual'>('annual');
   const [busy, setBusy] = useState(false);
+  const [restoring, setRestoring] = useState(false);
+  const [pkgs, setPkgs] = useState<StorePackage[]>([]);
   const bg = useWiki('Lofoten');
-  useEffect(() => { loadPlans().then(setPlans); }, []);
+  useEffect(() => { loadPlans().then(setPlans); storePackages().then(setPkgs); }, []);
 
   const plus = plans.find((p) => p.id === 'plus')!;
   const annual = plans.find((p) => p.id === 'annual')!;
   const saving = Math.round((1 - annual.price / (plus.price * 12)) * 100);
-  const current = profile?.plan ?? 'free';
+  const current = usePlan(profile);
+  const native = Platform.OS !== 'web';
+  // Store price wins on iOS/Android: it is localised and is what the user is charged.
+  const storePrice = (id: 'plus' | 'annual') => pkgs.find((x) => x.plan === id)?.priceString;
+  const annualPrice = storePrice('annual') ?? `$${annual.price.toFixed(2)}`;
+  const monthlyPrice = storePrice('plus') ?? `$${plus.price.toFixed(2)}`;
 
   async function buy() {
     setBusy(true);
     try {
-      const r = await purchase(pick);
-      if (!r.ok) notify('Not available yet', r.message);
+      const r = await purchase(pick, pkgs);
+      if (r.cancelled) return;
+      if (r.ok) { notify('DetourLoop Plus', r.message); if (native) router.back(); }
+      else notify(purchasesConfigured() ? 'Purchase not completed' : 'Not available yet', r.message);
     } finally { setBusy(false); }
+  }
+
+  async function restore() {
+    setRestoring(true);
+    try {
+      const r = await restorePurchases();
+      notify(r.ok ? 'Restored' : 'Nothing to restore', r.message);
+    } finally { setRestoring(false); }
   }
 
   return (
@@ -61,13 +80,26 @@ export default function Paywall() {
         ) : (
           <>
             <View style={{ gap: space.md }}>
-              <PlanCard on={pick === 'annual'} onPress={() => setPick('annual')} title="Annual" price={`$${annual.price.toFixed(2)} / year`} sub={`$${(annual.price / 12).toFixed(2)} a month · save ${saving}%`} badge="Best value" />
-              <PlanCard on={pick === 'plus'} onPress={() => setPick('plus')} title="Monthly" price={`$${plus.price.toFixed(2)} / month`} sub="Cancel any time" />
+              <PlanCard on={pick === 'annual'} onPress={() => setPick('annual')} title="Annual" price={`${annualPrice} / year`} sub={storePrice('annual') ? 'Billed once a year' : `$${(annual.price / 12).toFixed(2)} a month · save ${saving}%`} badge="Best value" />
+              <PlanCard on={pick === 'plus'} onPress={() => setPick('plus')} title="Monthly" price={`${monthlyPrice} / month`} sub="Cancel any time" />
             </View>
             <Button v="sand" label={`Continue with ${pick === 'annual' ? 'Annual' : 'Monthly'}`} loading={busy} onPress={buy} />
             {!purchasesConfigured() ? <T v="micro" c={color.sand} style={{ textAlign: 'center' }}>Purchases are not connected in this build. Nothing will be charged.</T> : null}
           </>
         )}
+        {native && purchasesConfigured() ? (
+          <>
+            <Button v="ghost" label="Restore purchases" loading={restoring} onPress={restore} style={{ alignSelf: 'center' }} />
+            {/* Auto-renewal disclosure (App Store guideline 3.1.2) */}
+            <T v="micro" c="rgba(248,247,243,0.6)" style={{ textAlign: 'center' }}>
+              Plus renews automatically at the price shown until you cancel. Payment is charged to your {Platform.OS === 'ios' ? 'Apple ID' : 'Google Play'} account at confirmation. It renews unless cancelled at least 24 hours before the end of the period. Manage or cancel any time in your {Platform.OS === 'ios' ? 'App Store' : 'Google Play'} account settings.
+            </T>
+            <View style={{ flexDirection: 'row', justifyContent: 'center', gap: space.lg }}>
+              <Press onPress={() => Linking.openURL('https://www.apple.com/legal/internet-services/itunes/dev/stdeula/')} accessibilityRole="link"><T v="micro" c={color.sand}>Terms of Use</T></Press>
+              {config.webUrl ? <Press onPress={() => Linking.openURL(`${config.webUrl}/privacy`)} accessibilityRole="link"><T v="micro" c={color.sand}>Privacy Policy</T></Press> : null}
+            </View>
+          </>
+        ) : null}
         <T v="micro" c="rgba(248,247,243,0.6)" style={{ textAlign: 'center' }}>
           Free stays free: trip planning, basic discovery, maps, the photo timeline and sharing. Your trips, photos and Replays are always yours to view and export, on any plan.
         </T>

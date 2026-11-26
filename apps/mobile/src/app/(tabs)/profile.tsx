@@ -11,6 +11,7 @@ import { useStore } from '@/state/store';
 import { PERSONALITIES, personalityOf } from '@/services/personalization';
 import { permissionStatus } from '@/services/location';
 import { isCloud, providers } from '@/services/config';
+import { usePlan } from '@/services/subscriptions';
 import { supabase } from '@/services/supabase';
 import { BUDGETS, INTERESTS, STYLES, TRANSPORT } from '@/content/options';
 import { color, radius, space } from '@/theme/tokens';
@@ -36,6 +37,7 @@ export default function ProfileScreen() {
   const [mediaPerm, setMediaPerm] = useState<string>('…');
   const [name, setName] = useState(profile?.displayName ?? '');
   const [pick, setPick] = useState<Pick>(null);
+  const plan = usePlan(profile);
 
   useEffect(() => {
     permissionStatus().then(setLocPerm);
@@ -101,7 +103,7 @@ export default function ProfileScreen() {
 
         <Group>
           <Row icon={persona.icon} label="Personality" value={persona.title.replace('The ', '')} onPress={() => setPick('personality')} />
-          <Row icon="diamond-outline" label="Plan" value={p.plan === 'free' ? 'Free' : p.plan === 'annual' ? 'Plus · Annual' : 'Plus'} onPress={() => router.push('/paywall')} />
+          <Row icon="diamond-outline" label="Plan" value={plan === 'free' ? 'Free' : plan === 'annual' ? 'Plus · Annual' : 'Plus'} onPress={() => router.push('/paywall')} />
         </Group>
 
         <Group title="Travel preferences">

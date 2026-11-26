@@ -221,8 +221,8 @@ create table public.app_config (
 insert into public.app_config (key, value) values
   ('plans', '{
      "free":   {"price": 0,     "currency": "USD", "period": null,    "ai_discoveries_per_day": 10, "active_trips": 3,  "media_mb": 500},
-     "plus":   {"price": 7.99,  "currency": "USD", "period": "month", "ai_discoveries_per_day": 200,"active_trips": 50, "media_mb": 20000},
-     "annual": {"price": 59.99, "currency": "USD", "period": "year",  "ai_discoveries_per_day": 200,"active_trips": 50, "media_mb": 20000}
+     "plus":   {"price": 2.25,  "currency": "USD", "period": "month", "ai_discoveries_per_day": 200,"active_trips": 50, "media_mb": 20000},
+     "annual": {"price": 24.00, "currency": "USD", "period": "year",  "ai_discoveries_per_day": 200,"active_trips": 50, "media_mb": 20000}
    }'::jsonb);
 
 -- Per-user AI usage, for rate limiting in the ai Edge Function.
