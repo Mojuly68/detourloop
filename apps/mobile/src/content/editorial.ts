@@ -4,6 +4,14 @@ import type { Interest } from '@/data/types';
 
 export const HERO_WIKI = 'Bixby Creek Bridge';
 
+/** Discover hero: a calm, open sky on top (room for the headline), detail low in the frame. */
+export const HERO = {
+  uri: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b6/Anse_Severe_-_La_Digue_-_Seychelles_-_06.jpg/1280px-Anse_Severe_-_La_Digue_-_Seychelles_-_06.jpg',
+  place: 'Anse Sévère, La Digue, Seychelles',
+  credit: 'NorbertNagel · CC BY-SA 4.0 · Wikimedia Commons',
+  sky: '#2E9AE1', // sampled from the photo's top edge
+};
+
 export const EXPERIENCES: { key: string; title: string; wiki: string; interests: Interest[] }[] = [
   { key: 'coast', title: 'Wild coastlines', wiki: 'Big Sur', interests: ['beaches', 'scenic', 'photography'] },
   { key: 'mountains', title: 'Mountain roads', wiki: 'Tioga Pass', interests: ['scenic', 'hiking', 'adventure'] },

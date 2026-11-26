@@ -7,7 +7,7 @@ import Animated, { FadeInDown, interpolate, useAnimatedScrollHandler, useAnimate
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { Discovery } from '@/data/types';
 import { useStore } from '@/state/store';
-import { EXPERIENCES, HERO_WIKI, INSPIRATION, ROAD_TRIPS, UNEXPECTED } from '@/content/editorial';
+import { EXPERIENCES, HERO, INSPIRATION, ROAD_TRIPS, UNEXPECTED } from '@/content/editorial';
 import { discoverNearby, enrich } from '@/services/places';
 import { useLocation } from '@/services/location';
 import { sizedThumb, type WikiSummary } from '@/services/photos';
@@ -34,10 +34,10 @@ export default function Discover() {
   const w = Math.min(width, 480);
   const insets = useSafeAreaInsets();
   const { profile, trips, toggleSave, saved } = useStore();
-  const hero = useWiki(HERO_WIKI);
   const scrollY = useSharedValue(0);
   const onScroll = useAnimatedScrollHandler((e) => { scrollY.value = e.contentOffset.y; });
-  const heroH = 560;
+  const heroH = 600;
+  const HERO_SKY_EXTRA = 110;
   const parallax = useAnimatedStyle(() => ({
     transform: [{ translateY: interpolate(scrollY.value, [-200, 0, heroH], [-60, 0, heroH * 0.45]) }, { scale: interpolate(scrollY.value, [-200, 0], [1.25, 1], 'clamp') }],
   }));
@@ -62,30 +62,35 @@ export default function Discover() {
   }
 
   const upcoming = trips.filter((t) => t.status !== 'completed').slice(0, 5);
-  const heroImg = hero ? sizedThumb(hero.thumb, 1200) ?? hero.image : undefined;
   const first = profile?.displayName?.split(' ')[0];
 
   return (
     <View style={{ flex: 1, backgroundColor: color.paper }}>
       <Animated.ScrollView onScroll={onScroll} scrollEventThrottle={16} contentContainerStyle={{ paddingBottom: 130 }} keyboardShouldPersistTaps="handled">
         {/* HERO */}
-        <View style={{ height: heroH, overflow: 'hidden', backgroundColor: color.oceanDeep }}>
-          <Animated.View style={[{ position: 'absolute', top: 0, left: 0, right: 0, height: heroH }, parallax]}>
-            <Photo uri={heroImg} label={HERO_WIKI} style={{ flex: 1 }} />
+        {/* The photo sits low; above it the sky continues in its own color, so the headline has
+            a long, calm band of open sky to sit on. */}
+        <View style={{ height: heroH, overflow: 'hidden', backgroundColor: HERO.sky }}>
+          <Animated.View style={[{ position: 'absolute', top: HERO_SKY_EXTRA, left: 0, right: 0, height: heroH - HERO_SKY_EXTRA + 40 }, parallax]}>
+            <Photo uri={HERO.uri} label={HERO.place} style={{ flex: 1, backgroundColor: HERO.sky }} />
+            <LinearGradient colors={[HERO.sky, 'rgba(46,154,225,0)']} style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 70 }} />
           </Animated.View>
-          {/* Warm sunset wash over the photo, darker only where the text sits. */}
-          <LinearGradient colors={['rgba(255,214,176,0.38)', 'rgba(255,186,140,0.10)', 'rgba(24,30,40,0.62)']} locations={[0, 0.4, 1]} style={StyleSheet.absoluteFill} />
+          {/* Light wash on the sky for the headline, deeper at the bottom for the buttons. */}
+          <LinearGradient colors={['rgba(6,34,60,0.34)', 'rgba(6,34,60,0.06)', 'rgba(6,34,60,0)', 'rgba(8,22,32,0.62)']} locations={[0, 0.42, 0.6, 1]} style={StyleSheet.absoluteFill} />
           <View style={{ position: 'absolute', top: insets.top + space.lg, left: space.xl, right: space.xl, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
             <T v="h3" c={color.white} style={{ fontFamily: 'Roboto_300Light', fontSize: 21, letterSpacing: 0.3 }}>DetourLoop</T>
             <ModeBanner compact dark />
           </View>
-          <View style={{ position: 'absolute', left: space.xl, right: space.xl, bottom: 76, gap: space.md }}>
-            {first ? <T v="kicker" c={color.sand}>Hello, {first}</T> : null}
+          {/* Headline sits on the open sky, where nothing competes with it. */}
+          <View style={{ position: 'absolute', top: insets.top + 74, left: space.xl, right: space.xl, gap: space.md }}>
+            {first ? <T v="kicker" c="rgba(248,247,243,0.9)">Hello, {first}</T> : null}
             <Animated.View entering={FadeInDown.delay(100).springify().damping(16)}>
-              <T v="hero" c={color.white}>Your next adventure starts here.</T>
+              <T v="hero" c={color.white} style={{ fontFamily: 'Roboto_700Bold', fontSize: 44, lineHeight: 47, letterSpacing: -1.2, textShadowColor: 'rgba(6,34,60,0.35)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 14 }}>Your next adventure starts here.</T>
             </Animated.View>
-            <T v="body" c="rgba(248,247,243,0.88)">Discover extraordinary places, unexpected detours, and experiences worth remembering.</T>
-            <View style={{ flexDirection: 'row', gap: space.md, marginTop: space.sm, alignItems: 'center' }}>
+            <T v="body" c="rgba(248,247,243,0.94)" style={{ textShadowColor: 'rgba(6,34,60,0.4)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 8 }}>Discover extraordinary places, unexpected detours, and experiences worth remembering.</T>
+          </View>
+          <View style={{ position: 'absolute', left: space.xl, right: space.xl, bottom: 70 }}>
+            <View style={{ flexDirection: 'row', gap: space.md, alignItems: 'center' }}>
               <Button label="Plan an Adventure" icon="sparkles" onPress={() => router.push('/plan')} style={{ flex: 1 }} />
               <View style={{ alignItems: 'center', gap: 4 }}>
                 <IconButton icon="locate" label="Explore Nearby" tone="glass" size={52} onPress={() => router.push({ pathname: '/explore', params: { nearby: '1' } })} />
@@ -93,7 +98,7 @@ export default function Discover() {
               </View>
             </View>
           </View>
-          {hero ? <T v="micro" c="rgba(248,247,243,0.6)" style={{ position: 'absolute', right: space.md, bottom: 48, fontSize: 9 }}>{hero.title} · Wikimedia Commons</T> : null}
+          <T v="micro" c="rgba(248,247,243,0.7)" style={{ position: 'absolute', right: space.md, bottom: 46, fontSize: 9 }}>{HERO.place} · {HERO.credit}</T>
         </View>
 
         {/* Content panel slides over the photo, like a sheet. */}
