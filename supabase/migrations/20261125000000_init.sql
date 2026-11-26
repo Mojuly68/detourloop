@@ -3,7 +3,7 @@
 -- Every user-owned row is reachable only by its owner. Public replays are exposed
 -- exclusively through get_shared_replay(), which returns only what the owner selected.
 
-create extension if not exists "pgcrypto";
+create extension if not exists "pgcrypto" with schema extensions;
 
 -- ───────────────────────────── helpers ─────────────────────────────
 create or replace function public.set_updated_at() returns trigger
@@ -192,7 +192,7 @@ create table public.shared_trips (
   id          uuid primary key default gen_random_uuid(),
   trip_id     uuid not null references public.trips(id) on delete cascade,
   owner_id    uuid not null references public.profiles(id) on delete cascade,
-  share_token text not null unique default translate(encode(gen_random_bytes(18), 'base64'), '+/=', '-_'),  -- URL-safe
+  share_token text not null unique default translate(encode(extensions.gen_random_bytes(18), 'base64'), '+/=', '-_'),  -- URL-safe
   visibility  text not null default 'unlisted' check (visibility in ('unlisted','public')),
   revoked     boolean not null default false,
   expires_at  timestamptz,
