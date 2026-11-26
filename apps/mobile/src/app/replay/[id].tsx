@@ -287,7 +287,7 @@ export default function ReplayScreen() {
                 const when = m?.capturedAt ?? (trip.startDate ? trip.startDate + 'T12:00:00' : undefined);
                 return (
                   <Animated.View key={s.id} entering={FadeInDown.delay(i * 80)} style={[{ width: w * 0.7, borderRadius: radius.lg, backgroundColor: color.cream, overflow: 'hidden' }, shadow.card]}>
-                    <Photo uri={m?.uri ?? s.imageUrl} label={s.name} credit={!m && s.imageUrl ? 'Wikimedia Commons' : undefined} style={{ height: 240 }} />
+                    <Photo uri={m?.uri ?? s.imageUrl} label={s.name} style={{ height: 240 }} />
                     <View style={{ padding: space.lg, gap: 4 }}>
                       <T v="kicker" c={color.teal}>{String(i + 1).padStart(2, '0')} · {s.category ? categoryByKey[s.category]?.label ?? s.category : 'Stop'}</T>
                       <T v="h2" numberOfLines={2}>{s.name}</T>

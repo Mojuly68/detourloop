@@ -34,7 +34,7 @@ export default function Journeys() {
 
   return (
     <View style={{ flex: 1, backgroundColor: color.paper }}>
-      <ScrollView contentContainerStyle={{ paddingTop: insets.top + space.xl, paddingBottom: 140, gap: space.lg }} stickyHeaderIndices={[1]}>
+      <ScrollView contentContainerStyle={{ paddingTop: insets.top + space.xl, paddingBottom: 40, gap: space.lg }} stickyHeaderIndices={[1]}>
         <View style={{ paddingHorizontal: space.xl, flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' }}>
           <View><T v="kicker" c={color.teal}>My journeys</T><T v="h1">Your travel library</T></View>
           <IconButton icon="add" label="Plan a new trip" tone="dark" onPress={() => router.push('/plan')} />

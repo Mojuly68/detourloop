@@ -17,19 +17,20 @@ export const tap = () => { if (Platform.OS !== 'web') Haptics.selectionAsync().c
 // ── Typography ──────────────────────────────────────────────────────────────
 type TV = 'hero' | 'h1' | 'h2' | 'h3' | 'body' | 'bodyStrong' | 'small' | 'micro' | 'label' | 'kicker';
 const tv: Record<TV, TextStyle> = {
-  hero: { fontFamily: font.display, fontSize: size.hero, lineHeight: size.hero * 1.1, letterSpacing: -0.9 },
-  h1: { fontFamily: font.display, fontSize: size.h1, lineHeight: size.h1 * 1.14, letterSpacing: -0.6 },
-  h2: { fontFamily: font.display, fontSize: size.h2, lineHeight: size.h2 * 1.2, letterSpacing: -0.3 },
+  hero: { fontFamily: font.bold, fontSize: size.hero, lineHeight: size.hero * 1.1, letterSpacing: -0.8 },
+  h1: { fontFamily: font.semibold, fontSize: size.h1, lineHeight: size.h1 * 1.15, letterSpacing: -0.5 },
+  h2: { fontFamily: font.semibold, fontSize: size.h2, lineHeight: size.h2 * 1.2, letterSpacing: -0.3 },
   h3: { fontFamily: font.medium, fontSize: size.h3, lineHeight: size.h3 * 1.25, letterSpacing: -0.1 },
   body: { fontFamily: font.body, fontSize: size.body, lineHeight: size.body * 1.5 },
   bodyStrong: { fontFamily: font.semibold, fontSize: size.body, lineHeight: size.body * 1.45 },
   small: { fontFamily: font.medium, fontSize: size.small, lineHeight: size.small * 1.45 },
   micro: { fontFamily: font.medium, fontSize: size.micro, lineHeight: size.micro * 1.4 },
   label: { fontFamily: font.semibold, fontSize: size.small, letterSpacing: 0.2 },
-  kicker: { fontFamily: font.medium, fontSize: 11, letterSpacing: 1.4, textTransform: 'uppercase' },
+  kicker: { fontFamily: font.semibold, fontSize: 11, letterSpacing: 1.2, textTransform: 'uppercase' },
 };
-export function T({ v = 'body', c = color.ink, style, children, ...rest }: { v?: TV; c?: string; style?: StyleProp<TextStyle>; children: React.ReactNode; numberOfLines?: number; accessibilityRole?: 'header' | 'text' }) {
-  return <Text {...rest} style={[tv[v], { color: c }, style]}>{children}</Text>;
+export function T({ v = 'body', c = color.ink, style, children, ...rest }: { v?: TV; c?: string; style?: StyleProp<TextStyle>; children: React.ReactNode; numberOfLines?: number; accessibilityRole?: 'header' | 'text'; maxFontSizeMultiplier?: number }) {
+  // Large-text settings still scale type, but capped so layouts hold.
+  return <Text maxFontSizeMultiplier={1.2} {...rest} style={[tv[v], { color: c }, style]}>{children}</Text>;
 }
 
 // ── Pressable with spring scale ─────────────────────────────────────────────
@@ -70,7 +71,7 @@ export function Button({ label, onPress, v = 'primary', icon, loading, disabled,
       accessibilityLabel={accessibilityLabel ?? label}
       accessibilityState={{ disabled: !!disabled, busy: !!loading }}
       style={[
-        { minHeight: small ? 40 : touch + 4, paddingHorizontal: small ? space.lg : space.xl, borderRadius: radius.pill, backgroundColor: c.bg, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: space.sm, opacity: disabled ? 0.45 : 1 },
+        { minHeight: small ? 38 : touch, paddingHorizontal: small ? space.lg : space.xl, borderRadius: radius.pill, backgroundColor: c.bg, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: space.sm, opacity: disabled ? 0.45 : 1 },
         c.border ? { borderWidth: 1, borderColor: c.border } : null,
         v === 'primary' && !small ? shadow.soft : null,
         chip ? { paddingLeft: 6, justifyContent: 'flex-start' } : null,
@@ -79,11 +80,11 @@ export function Button({ label, onPress, v = 'primary', icon, loading, disabled,
     >
       {loading ? <ActivityIndicator color={c.fg} /> : chip ? (
         // Leading icon in its own round chip — the signature button of the design.
-        <View style={{ width: 42, height: 42, borderRadius: 21, backgroundColor: v === 'primary' ? 'rgba(248,247,243,0.14)' : 'rgba(30,42,48,0.08)', alignItems: 'center', justifyContent: 'center' }}>
-          <Icon name={icon!} size={19} color={v === 'primary' ? color.sand : c.fg} />
+        <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: v === 'primary' ? 'rgba(248,247,243,0.14)' : 'rgba(30,42,48,0.08)', alignItems: 'center', justifyContent: 'center' }}>
+          <Icon name={icon!} size={17} color={v === 'primary' ? color.sand : c.fg} />
         </View>
       ) : icon ? <Icon name={icon} size={small ? 16 : 19} color={c.fg} /> : null}
-      <T v="label" c={c.fg} numberOfLines={1} style={[{ fontSize: small ? 13 : 15 }, chip ? { flex: 1, textAlign: 'center', marginRight: 16 } : null]}>{label}</T>
+      <T v="label" c={c.fg} numberOfLines={1} style={[{ fontSize: small ? 13 : 14.5 }, chip ? { flex: 1, textAlign: 'center', marginRight: 14 } : null]}>{label}</T>
     </Press>
   );
 }
@@ -134,7 +135,7 @@ export function SectionHeader({ kicker, title, action, onAction }: { kicker?: st
   return (
     <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', paddingHorizontal: space.xl, marginBottom: space.md }}>
       <View style={{ flex: 1 }}>
-        {kicker ? <T v="kicker" c={color.sandDeep}>{kicker}</T> : null}
+        {kicker ? <T v="kicker" c={color.teal}>{kicker}</T> : null}
         <T v="h2" accessibilityRole="header">{title}</T>
       </View>
       {action ? (
@@ -157,9 +158,9 @@ export function Divider() { return <View style={{ height: StyleSheet.hairlineWid
 export function IconTile({ icon, label, onPress, selected }: { icon: string; label: string; onPress?: () => void; selected?: boolean }) {
   return (
     <Press onPress={onPress} accessibilityLabel={label} accessibilityState={{ selected: !!selected }}
-      style={[{ width: 84, height: 96, borderRadius: radius.md + 2, backgroundColor: selected ? color.ocean : color.tile, borderWidth: 1, borderColor: selected ? color.ocean : color.tileLine, alignItems: 'center', justifyContent: 'center', gap: 10, paddingHorizontal: 6 }]}>
-      <Icon name={icon} size={28} color={selected ? color.sand : color.ocean} />
-      <T v="micro" c={selected ? color.white : color.inkSoft} numberOfLines={2} style={{ textAlign: 'center' }}>{label}</T>
+      style={[{ width: 82, height: 76, borderRadius: radius.md, backgroundColor: selected ? color.ocean : color.tile, borderWidth: 1, borderColor: selected ? color.ocean : color.tileLine, alignItems: 'center', justifyContent: 'center', gap: 7, paddingHorizontal: 4 }]}>
+      <Icon name={icon} size={22} color={selected ? color.sand : color.ocean} />
+      <T v="micro" c={selected ? color.white : color.ink} numberOfLines={1} maxFontSizeMultiplier={1} style={{ textAlign: 'center', fontSize: 11.5 }}>{label}</T>
     </Press>
   );
 }
@@ -171,6 +172,7 @@ export function Field({ label, style, ...p }: TextInputProps & { label?: string 
       {label ? <T v="label" c={color.inkSoft}>{label}</T> : null}
       <TextInput
         placeholderTextColor={color.gray}
+        maxFontSizeMultiplier={1.2}
         {...p}
         style={[{ minHeight: touch + 4, borderRadius: radius.md, borderWidth: 1, borderColor: color.tileLine, backgroundColor: color.card, paddingHorizontal: space.lg, fontFamily: font.body, fontSize: 16, color: color.ink }, style]}
       />
@@ -183,17 +185,17 @@ export function Skeleton({ w = '100%', h = 16, r = radius.sm, style }: { w?: num
   const o = useSharedValue(0.5);
   useEffect(() => { o.value = withRepeat(withSequence(withTiming(1, { duration: 700 }), withTiming(0.5, { duration: 700 })), -1); }, [o]);
   const a = useAnimatedStyle(() => ({ opacity: o.value }));
-  return <Animated.View accessibilityLabel="Loading" style={[{ width: w, height: h, borderRadius: r, backgroundColor: '#DED7C9' }, a, style]} />;
+  return <Animated.View accessibilityLabel="Loading" style={[{ width: w, height: h, borderRadius: r, backgroundColor: '#E6EAEC' }, a, style]} />;
 }
 
 export function EmptyState({ icon, title, body, action, onAction }: { icon: string; title: string; body: string; action?: string; onAction?: () => void }) {
   return (
-    <View style={{ alignItems: 'center', padding: space.xxl, gap: space.md }}>
-      <View style={{ width: 84, height: 84, borderRadius: 42, backgroundColor: color.cream, alignItems: 'center', justifyContent: 'center' }}>
-        <Icon name={icon} size={36} color={color.teal} />
+    <View style={{ alignItems: 'center', paddingVertical: space.lg, paddingHorizontal: space.xl, gap: space.sm }}>
+      <View style={{ width: 52, height: 52, borderRadius: 26, backgroundColor: color.cream, alignItems: 'center', justifyContent: 'center' }}>
+        <Icon name={icon} size={24} color={color.teal} />
       </View>
-      <T v="h2" style={{ textAlign: 'center' }}>{title}</T>
-      <T v="body" c={color.inkSoft} style={{ textAlign: 'center', maxWidth: 320 }}>{body}</T>
+      <T v="h3" style={{ textAlign: 'center' }}>{title}</T>
+      <T v="small" c={color.inkSoft} style={{ textAlign: 'center', maxWidth: 300 }}>{body}</T>
       {action ? <Button label={action} onPress={onAction} style={{ marginTop: space.sm }} /> : null}
     </View>
   );
@@ -238,7 +240,7 @@ export function Toast({ text, visible }: { text: string; visible: boolean }) {
   useEffect(() => { y.value = withSpring(visible ? 0 : 80, { damping: 16, stiffness: 180 }); }, [visible, y]);
   const a = useAnimatedStyle(() => ({ transform: [{ translateY: y.value }], opacity: 1 - y.value / 80 }));
   return (
-    <Animated.View pointerEvents="none" accessibilityLiveRegion="polite" style={[{ position: 'absolute', left: space.xl, right: space.xl, bottom: 110, backgroundColor: color.oceanDeep, borderRadius: radius.pill, paddingVertical: 14, paddingHorizontal: space.xl, flexDirection: 'row', alignItems: 'center', gap: space.sm, zIndex: 50 }, a]}>
+    <Animated.View pointerEvents="none" accessibilityLiveRegion="polite" style={[{ position: 'absolute', left: space.xl, right: space.xl, bottom: 24, backgroundColor: color.oceanDeep, borderRadius: radius.pill, paddingVertical: 14, paddingHorizontal: space.xl, flexDirection: 'row', alignItems: 'center', gap: space.sm, zIndex: 50 }, a]}>
       <Icon name="checkmark-circle" size={18} color={color.sand} />
       <T v="label" c={color.white}>{text}</T>
     </Animated.View>

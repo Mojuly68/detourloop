@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Linking, ScrollView, View, useWindowDimensions , StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Image } from 'expo-image';
 import Animated, { FadeInDown, interpolate, useAnimatedScrollHandler, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { Discovery } from '@/data/types';
@@ -36,11 +37,13 @@ export default function Discover() {
   const { profile, trips, toggleSave, saved } = useStore();
   const scrollY = useSharedValue(0);
   const onScroll = useAnimatedScrollHandler((e) => { scrollY.value = e.contentOffset.y; });
-  const heroH = 600;
-  const HERO_SKY_EXTRA = 110;
+  const heroH = 430;
+  const HERO_SKY_EXTRA = 60;
   const parallax = useAnimatedStyle(() => ({
     transform: [{ translateY: interpolate(scrollY.value, [-200, 0, heroH], [-60, 0, heroH * 0.45]) }, { scale: interpolate(scrollY.value, [-200, 0], [1.25, 1], 'clamp') }],
   }));
+  // White band behind the status bar once the hero has scrolled away.
+  const statusScrim = useAnimatedStyle(() => ({ opacity: interpolate(scrollY.value, [heroH - 140, heroH - 60], [0, 1], 'clamp') }));
 
   const { loc, request } = useLocation();
   const [near, setNear] = useState<Discovery[] | null>(null);
@@ -66,7 +69,7 @@ export default function Discover() {
 
   return (
     <View style={{ flex: 1, backgroundColor: color.paper }}>
-      <Animated.ScrollView onScroll={onScroll} scrollEventThrottle={16} contentContainerStyle={{ paddingBottom: 130 }} keyboardShouldPersistTaps="handled">
+      <Animated.ScrollView onScroll={onScroll} scrollEventThrottle={16} contentContainerStyle={{ paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
         {/* HERO */}
         {/* The photo sits low; above it the sky continues in its own color, so the headline has
             a long, calm band of open sky to sit on. */}
@@ -76,33 +79,26 @@ export default function Discover() {
             <LinearGradient colors={[HERO.sky, 'rgba(46,154,225,0)']} style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 70 }} />
           </Animated.View>
           {/* Light wash on the sky for the headline, deeper at the bottom for the buttons. */}
-          <LinearGradient colors={['rgba(6,34,60,0.34)', 'rgba(6,34,60,0.06)', 'rgba(6,34,60,0)', 'rgba(8,22,32,0.62)']} locations={[0, 0.42, 0.6, 1]} style={StyleSheet.absoluteFill} />
-          <View style={{ position: 'absolute', top: insets.top + space.lg, left: space.xl, right: space.xl, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-            <T v="h3" c={color.white} style={{ fontFamily: 'Roboto_300Light', fontSize: 21, letterSpacing: 0.3 }}>DetourLoop</T>
-            <ModeBanner compact dark />
+          <LinearGradient colors={['rgba(6,34,60,0.30)', 'rgba(6,34,60,0.04)', 'rgba(6,34,60,0)', 'rgba(8,22,32,0.5)']} locations={[0, 0.45, 0.62, 1]} style={StyleSheet.absoluteFill} />
+          <View style={{ position: 'absolute', top: insets.top + space.md, left: space.xl, right: space.xl, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <View>{/* keeps the logo on the right when there is no demo banner */}<ModeBanner compact dark /></View>
+            <Image source={require('../../../assets/icon.png')} style={{ width: 36, height: 36, borderRadius: 9 }} accessibilityLabel="DetourLoop" />
           </View>
           {/* Headline sits on the open sky, where nothing competes with it. */}
-          <View style={{ position: 'absolute', top: insets.top + 74, left: space.xl, right: space.xl, gap: space.md }}>
-            {first ? <T v="kicker" c="rgba(248,247,243,0.9)">Hello, {first}</T> : null}
+          <View style={{ position: 'absolute', top: insets.top + 72, left: space.xl, right: space.xl, gap: 6 }}>
+            {first ? <T v="kicker" c="rgba(248,247,243,0.92)">Hello, {first}</T> : null}
             <Animated.View entering={FadeInDown.delay(100).springify().damping(16)}>
-              <T v="hero" c={color.white} style={{ fontFamily: 'Roboto_700Bold', fontSize: 44, lineHeight: 47, letterSpacing: -1.2, textShadowColor: 'rgba(6,34,60,0.35)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 14 }}>Your next adventure starts here.</T>
+              <T v="hero" c={color.white} style={{ fontSize: 30, lineHeight: 34, letterSpacing: -0.6, maxWidth: 300, textShadowColor: 'rgba(6,34,60,0.3)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 10 }}>Your next adventure starts here.</T>
             </Animated.View>
-            <T v="body" c="rgba(248,247,243,0.94)" style={{ textShadowColor: 'rgba(6,34,60,0.4)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 8 }}>Discover extraordinary places, unexpected detours, and experiences worth remembering.</T>
           </View>
-          <View style={{ position: 'absolute', left: space.xl, right: space.xl, bottom: 70 }}>
-            <View style={{ flexDirection: 'row', gap: space.md, alignItems: 'center' }}>
-              <Button label="Plan an Adventure" icon="sparkles" onPress={() => router.push('/plan')} style={{ flex: 1 }} />
-              <View style={{ alignItems: 'center', gap: 4 }}>
-                <IconButton icon="locate" label="Explore Nearby" tone="glass" size={52} onPress={() => router.push({ pathname: '/explore', params: { nearby: '1' } })} />
-                <T v="micro" c={color.white} style={{ fontSize: 10 }}>Explore Nearby</T>
-              </View>
-            </View>
+          <View style={{ position: 'absolute', left: space.xl, right: space.xl, bottom: 40, flexDirection: 'row', gap: space.sm }}>
+            <Button label="Plan a trip" icon="sparkles" onPress={() => router.push('/plan')} style={{ flex: 1 }} />
+            <Button label="Nearby" icon="locate" v="light" onPress={() => router.push({ pathname: '/explore', params: { nearby: '1' } })} style={{ flex: 1 }} />
           </View>
-          <T v="micro" c="rgba(248,247,243,0.7)" style={{ position: 'absolute', right: space.md, bottom: 46, fontSize: 9 }}>{HERO.place} · {HERO.credit}</T>
         </View>
 
         {/* Content panel slides over the photo, like a sheet. */}
-        <View style={{ marginTop: -36, borderTopLeftRadius: radius.xl + 4, borderTopRightRadius: radius.xl + 4, backgroundColor: color.paper, paddingTop: space.xl }}>
+        <View style={{ marginTop: -16, borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, backgroundColor: color.paper, paddingTop: space.xl }}>
 
         {/* SEARCH */}
         <View style={[{ marginHorizontal: space.xl, borderRadius: radius.pill, zIndex: 20 }, shadow.card]}>
@@ -129,9 +125,9 @@ export default function Discover() {
         {/* EXPERIENCES */}
         <Section>
           <SectionHeader kicker="Explore by experience" title="What are you in the mood for?" />
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} decelerationRate="fast" snapToInterval={w * 0.46 + space.md} contentContainerStyle={{ paddingHorizontal: space.xl, gap: space.md, paddingTop: 4, paddingBottom: space.xl }}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} decelerationRate="fast" snapToInterval={w * 0.42 + space.md} contentContainerStyle={{ paddingHorizontal: space.xl, gap: space.md, paddingTop: 4, paddingBottom: space.xl }}>
             {EXPERIENCES.map((e) => (
-              <WikiCard key={e.key} inset wiki={e.wiki} title={e.title} line={e.wiki.split(',')[0]} width={w * 0.46} height={250}
+              <WikiCard key={e.key} inset wiki={e.wiki} title={e.title} line={e.wiki.split(',')[0]} width={w * 0.42} height={200}
                 onPress={() => router.push({ pathname: '/plan', params: { interests: e.interests.join(',') } })} />
             ))}
           </ScrollView>
@@ -141,7 +137,7 @@ export default function Discover() {
         <Section>
           <SectionHeader kicker="Near you" title="Worth a short detour" />
           {near === null && !nearBusy ? (
-            <View style={{ marginHorizontal: space.xl, padding: space.xl, borderRadius: radius.lg, backgroundColor: color.tile, borderWidth: 1, borderColor: color.tileLine, gap: space.md }}>
+            <View style={{ marginHorizontal: space.xl, padding: space.lg, borderRadius: radius.lg, backgroundColor: color.tile, gap: space.sm }}>
               <T v="bodyStrong">See real places around you</T>
               <T v="small" c={color.inkSoft}>We ask for your location once, only to search nearby. It is not stored or tracked.</T>
               {loc.status === 'denied' ? (
@@ -165,9 +161,9 @@ export default function Discover() {
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: space.xl, gap: space.md, paddingTop: 4, paddingBottom: space.xl }}>
               {near!.map((d) => (
                 <Press key={d.placeId} onPress={() => router.push({ pathname: '/plan', params: { to: d.name, toLat: String(d.lat), toLng: String(d.lng) } })} accessibilityLabel={`Plan a trip to ${d.name}, ${fmtKm(d.distanceKm)} away`}
-                  style={[{ width: 220, borderRadius: radius.lg, backgroundColor: color.card, padding: 8 }, shadow.card]}>
+                  style={{ width: 200 }}>
                   <Photo uri={d.imageUrl} label={d.name} style={{ height: 130, borderRadius: radius.md }} />
-                  <View style={{ padding: space.md, gap: 4 }}>
+                  <View style={{ paddingTop: 8, gap: 3 }}>
                     <Pill label={d.categoryLabel} />
                     <T v="bodyStrong" numberOfLines={1}>{d.name}</T>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -188,7 +184,7 @@ export default function Discover() {
           <SectionHeader kicker="Unexpected discoveries" title="Places most people drive past" />
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: space.xl, gap: space.md, paddingTop: 4, paddingBottom: space.xl }}>
             {UNEXPECTED.map((u) => (
-              <WikiCard key={u} inset wiki={u} title={u.replace(/ \(.*\)$/, '')} line="Tap for the story" width={w * 0.56} height={250} onPress={(s) => s && setSheet(s)} />
+              <WikiCard key={u} inset wiki={u} title={u.replace(/ \(.*\)$/, '')} line="Tap for the story" width={w * 0.5} height={210} onPress={(s) => s && setSheet(s)} />
             ))}
           </ScrollView>
         </Section>
@@ -208,21 +204,22 @@ export default function Discover() {
           <SectionHeader kicker="Travel inspiration" title="Some day" />
           <View style={{ paddingHorizontal: space.xl, gap: space.lg }}>
             {INSPIRATION.map((i) => (
-              <WikiCard key={i.wiki} wiki={i.wiki} kicker={i.kicker} line={i.line} width="100%" height={340} big onPress={(s) => s && setSheet(s)} />
+              <WikiCard key={i.wiki} wiki={i.wiki} kicker={i.kicker} line={i.line} width="100%" height={240} big onPress={(s) => s && setSheet(s)} />
             ))}
           </View>
         </Section>
 
         <View style={{ paddingHorizontal: space.xl, marginTop: space.xxl }}>
-          <T v="micro" c={color.gray}>Photos and descriptions: Wikipedia and Wikimedia Commons (CC BY-SA). Places: © OpenStreetMap contributors. Weather: Open-Meteo.</T>
+          <T v="micro" c={color.gray}>Photos and descriptions: Wikipedia and Wikimedia Commons (CC BY-SA). Cover: {HERO.place}, {HERO.credit}. Places: © OpenStreetMap contributors. Weather: Open-Meteo.</T>
         </View>
         </View>
       </Animated.ScrollView>
+      <Animated.View pointerEvents="none" style={[{ position: 'absolute', top: 0, left: 0, right: 0, height: insets.top, backgroundColor: color.paper }, statusScrim]} />
 
       <Sheet visible={!!sheet} onClose={() => setSheet(null)} label={sheet?.title}>
         {sheet ? (
           <>
-            <Photo uri={sizedThumb(sheet.thumb, 1000) ?? sheet.image} label={sheet.title} credit="Wikimedia Commons" style={{ height: 220, borderRadius: radius.lg }} />
+            <Photo uri={sizedThumb(sheet.thumb, 1000) ?? sheet.image} label={sheet.title} style={{ height: 220, borderRadius: radius.md }} />
             <T v="h1">{sheet.title}</T>
             {sheet.extract ? <T v="body" c={color.inkSoft}>{sheet.extract}</T> : null}
             <Pill icon="book-outline" label="From Wikipedia" />
@@ -246,17 +243,17 @@ export default function Discover() {
 }
 
 function Section({ children }: { children: React.ReactNode }) {
-  return <View style={{ marginTop: space.xxl + 4 }}>{children}</View>;
+  return <View style={{ marginTop: space.xxl }}>{children}</View>;
 }
 
 function RoadTripRow({ r }: { r: (typeof ROAD_TRIPS)[number] }) {
   const s = useWiki(r.wiki);
   return (
     <Press onPress={() => router.push({ pathname: '/plan', params: { from: r.from, to: r.to, interests: r.interests.join(','), title: r.title } })} accessibilityLabel={`${r.title}, ${r.from} to ${r.to}`}
-      style={[{ flexDirection: 'row', gap: space.md, alignItems: 'center', backgroundColor: color.card, borderRadius: radius.lg, padding: 10 }, shadow.soft]}>
-      <Photo uri={s ? sizedThumb(s.thumb, 300) : undefined} label={r.title} style={{ width: 92, height: 92, borderRadius: radius.md }} />
+      style={{ flexDirection: 'row', gap: space.md, alignItems: 'center', paddingVertical: 4 }}>
+      <Photo uri={s ? sizedThumb(s.thumb, 300) : undefined} label={r.title} style={{ width: 76, height: 76, borderRadius: radius.md }} />
       <View style={{ flex: 1, gap: 2 }}>
-        <T v="h3" style={{ fontFamily: 'Roboto_400Regular', fontSize: 19 }}>{r.title}</T>
+        <T v="bodyStrong">{r.title}</T>
         <T v="micro" c={color.teal}>{r.from.split(',')[0]} → {r.to.split(',')[0]}</T>
         <T v="small" c={color.inkSoft} numberOfLines={1}>{r.blurb}</T>
       </View>

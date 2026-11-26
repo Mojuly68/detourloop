@@ -4,7 +4,6 @@ import { useStore } from '@/state/store';
 import { Loading } from '@/components/ui/primitives';
 import { TabBar, type TabDef } from '@/components/ui/TabBar';
 
-// Replay sits in the raised centre circle: it is the emotional heart of the app.
 const TABS: TabDef[] = [
   { name: 'index', title: 'Discover', icon: 'compass-outline', active: 'compass' },
   { name: 'explore', title: 'Explore', icon: 'map-outline', active: 'map' },

@@ -22,7 +22,7 @@ export function DiscoveryCard({
     <Animated.View entering={FadeInDown.delay(Math.min(index, 8) * 60).springify().damping(18)} layout={LinearTransition.springify().damping(20)}
       style={[{ backgroundColor: color.card, borderRadius: radius.lg, padding: 10 }, shadow.card]}>
       <Press onPress={() => setOpen((o) => !o)} scaleTo={0.99} accessibilityLabel={`${d.name}, ${d.categoryLabel}. ${open ? 'Collapse' : 'Expand'} details`} accessibilityState={{ expanded: open }}>
-        <Photo uri={d.imageUrl} label={d.name} icon={cat?.icon} credit={d.imageCredit} style={{ height: compact ? 130 : open ? 220 : 170, borderRadius: radius.md }} />
+        <Photo uri={d.imageUrl} label={d.name} icon={cat?.icon} style={{ height: compact ? 130 : open ? 220 : 170, borderRadius: radius.md }} />
         <View style={{ position: 'absolute', top: 12, left: 12, flexDirection: 'row', gap: 6 }}>
           <Pill tone="glass" icon={cat?.icon} label={d.categoryLabel} />
         </View>

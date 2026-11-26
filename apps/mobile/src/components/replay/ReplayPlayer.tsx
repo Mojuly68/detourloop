@@ -42,7 +42,7 @@ export function ReplayPlayer({ visible, onClose, trip, media, template, aspect, 
     return [
       { kind: 'title', title, sub: [trip.startDate && fmt(trip.startDate + 'T12:00:00'), trip.route ? `${Math.round(trip.route.distanceM / 1000)} km` : undefined].filter(Boolean).join(' · ') },
       ...photos.map((m) => ({ kind: 'photo' as const, uri: m.uri, title: m.caption || (m.stopId && byStop.get(m.stopId)?.name) || trip.destination?.name || trip.title, sub: fmt(m.capturedAt) })),
-      ...(photos.length === 0 ? trip.stops.filter((s) => s.status !== 'skipped').map((s) => ({ kind: 'photo' as const, uri: s.imageUrl, title: s.name, sub: s.imageUrl ? 'Photo: Wikimedia Commons' : undefined })) : []),
+      ...(photos.length === 0 ? trip.stops.filter((s) => s.status !== 'skipped').map((s) => ({ kind: 'photo' as const, uri: s.imageUrl, title: s.name, sub: undefined })) : []),
       { kind: 'end', title: 'Every journey deserves a story.', sub: 'DetourLoop · TravelReplay' },
     ];
   }, [trip, media, title]);

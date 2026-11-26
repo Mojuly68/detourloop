@@ -157,11 +157,11 @@ export default function Explore() {
   }
 
   const markers = useMemo(() => (active ? tripMarkers(active, sheet === 'nearby' ? nearby ?? [] : [], here) : here ? [{ id: 'me', kind: 'me' as const, lat: here.lat, lng: here.lng }, ...(nearby ?? []).map((d) => ({ id: d.placeId, kind: 'discovery' as const, lat: d.lat, lng: d.lng, icon: '•', label: d.name }))] : []), [active, nearby, here, sheet]);
-  const mapH = Math.round(height * (active ? 0.44 : 0.38));
+  const mapH = Math.round(height * (active ? 0.48 : 0.6));
 
   return (
     <View style={{ flex: 1, backgroundColor: color.paper }}>
-      <MapView style={{ height: mapH }} route={active?.route?.coords} routeStyle={active?.route?.source === 'straight-line' ? 'dashed' : 'solid'} markers={markers}
+      <MapView style={active ? { height: mapH } : { flex: 1 }} route={active?.route?.coords} routeStyle={active?.route?.source === 'straight-line' ? 'dashed' : 'solid'} markers={markers}
         fitKey={`${active?.id ?? 'none'}:${active?.stops.length ?? 0}:${here ? 'h' : ''}`} center={here ? [here.lng, here.lat] : active ? [active.origin.lng, active.origin.lat] : undefined} zoom={here && !active ? 11 : 6} />
       <View style={{ position: 'absolute', top: insets.top + space.md, left: space.lg, right: space.lg, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <View style={{ gap: 6 }}>
@@ -171,10 +171,10 @@ export default function Explore() {
         <IconButton icon="locate" label="Show my location once" tone="glass" onPress={() => request().then((p) => !p && setManualOpen(true))} />
       </View>
 
-      <ScrollView style={{ flex: 1, marginTop: -24, borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, backgroundColor: color.white }} contentContainerStyle={{ padding: space.xl, paddingBottom: 140, gap: space.lg }}>
+      <ScrollView style={active ? { flex: 1, backgroundColor: color.paper } : { flexGrow: 0, backgroundColor: color.paper }} contentContainerStyle={{ padding: space.lg, paddingBottom: active ? 32 : space.lg, gap: space.md }}>
         {loc.status === 'denied' || manualOpen ? (
-          <View style={{ gap: space.sm, padding: space.lg, borderRadius: radius.md, backgroundColor: '#F3E2C4' }}>
-            <T v="small" c="#6B4A12">{loc.status === 'denied' ? 'Location permission is off.' : 'Set your location manually.'} Search for where you are:</T>
+          <View style={{ gap: space.sm, padding: space.md, borderRadius: radius.md, backgroundColor: color.tile }}>
+            <T v="small" c={color.ink}>{loc.status === 'denied' ? 'Location permission is off.' : 'Set your location manually.'} Search for where you are:</T>
             <PlaceSearch placeholder="Town, landmark or address" onPick={(p) => { setManual(p); setManualOpen(false); }} />
           </View>
         ) : null}
@@ -252,9 +252,14 @@ export default function Explore() {
           </>
         ) : (
           <>
-            <EmptyState icon="navigate-circle-outline" title="No trip in progress" body="Start a planned trip to get live stops, ETA and detours here. Or just look around where you are now." />
-            <Button icon="sparkles" label="Find something interesting nearby" onPress={findNearby} />
-            <Button v="secondary" icon="chatbubbles-outline" label="Ask your DetourLoop Guide" onPress={() => setSheet('guide')} />
+            <View style={{ gap: 2 }}>
+              <T v="bodyStrong">No trip in progress</T>
+              <T v="small" c={color.inkSoft}>Start a planned trip for live stops and detours, or look around where you are.</T>
+            </View>
+            <View style={{ flexDirection: 'row', gap: space.sm }}>
+              <Button small icon="sparkles" label="Nearby" onPress={findNearby} style={{ flex: 1 }} />
+              <Button small v="secondary" icon="chatbubbles-outline" label="Ask the Guide" onPress={() => setSheet('guide')} style={{ flex: 1 }} />
+            </View>
             {trips.some((t) => t.status === 'planned') ? <Button v="ghost" label="Start a planned trip" onPress={() => router.push('/journeys')} /> : null}
           </>
         )}

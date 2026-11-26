@@ -52,18 +52,17 @@ export function WikiCard({ wiki, title, kicker, line, width, height, onPress, bi
   const s = useWiki(wiki);
   const img = s ? sizedThumb(s.thumb, big ? 1200 : 700) ?? s.image : undefined;
   if (inset) {
-    // White card, photo inset with its own rounded corners, text underneath.
-    const ph = Math.round(height * 0.62);
+    // Photo with its own corners, title and one line underneath. No frame.
+    // (Photo credits are collected once at the bottom of the screen.)
+    const ph = Math.round(height * 0.74);
     return (
-      <Press onPress={() => onPress?.(s ?? null)} accessibilityLabel={title ?? wiki} style={[{ width, height, borderRadius: radius.lg, backgroundColor: color.card, padding: 10 }, shadow.card]}>
+      <Press onPress={() => onPress?.(s ?? null)} accessibilityLabel={title ?? wiki} style={{ width, height }}>
         <View style={{ height: ph, borderRadius: radius.md, overflow: 'hidden', backgroundColor: color.tile }}>
           {s === undefined ? <Skeleton w="100%" h={ph} r={0} /> : <Photo uri={img} label={title ?? wiki} style={StyleSheet.absoluteFill} />}
         </View>
-        <View style={{ paddingHorizontal: 6, paddingTop: 12, gap: 4 }}>
-          <T v="bodyStrong" numberOfLines={1} style={{ fontFamily: 'Roboto_500Medium', fontSize: 16 }}>{title ?? s?.title ?? wiki}</T>
-          <View style={{ width: 56, height: 1.5, backgroundColor: color.sand, borderRadius: 1 }} />
-          {kicker || line ? <T v="micro" c={color.inkSoft} numberOfLines={2}>{line ?? kicker}</T> : null}
-          {s?.thumb ? <T v="micro" c={color.gray} style={{ fontSize: 9 }}>Photo: Wikimedia Commons</T> : null}
+        <View style={{ paddingTop: 8, gap: 1 }}>
+          <T v="bodyStrong" numberOfLines={1} style={{ fontSize: 14.5 }}>{title ?? s?.title ?? wiki}</T>
+          {kicker || line ? <T v="micro" c={color.inkSoft} numberOfLines={1}>{line ?? kicker}</T> : null}
         </View>
       </Press>
     );
@@ -74,14 +73,9 @@ export function WikiCard({ wiki, title, kicker, line, width, height, onPress, bi
       <LinearGradient colors={['transparent', 'rgba(12,24,32,0.78)']} style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: height * 0.65 }} />
       <View style={{ position: 'absolute', left: space.lg, right: space.lg, bottom: space.lg, gap: 2 }}>
         {kicker ? <T v="kicker" c={color.sand}>{kicker}</T> : null}
-        <T v={big ? 'h1' : 'h3'} c={color.white} numberOfLines={2} style={!big ? { fontFamily: 'Roboto_300Light', fontSize: 22, lineHeight: 25 } : undefined}>{title ?? s?.title ?? wiki}</T>
+        <T v={big ? 'h2' : 'h3'} c={color.white} numberOfLines={2}>{title ?? s?.title ?? wiki}</T>
         {line ? <T v="small" c="rgba(248,247,243,0.85)" numberOfLines={2}>{line}</T> : null}
       </View>
-      {s?.image || s?.thumb ? (
-        <View style={{ position: 'absolute', top: 10, right: 10, backgroundColor: 'rgba(15,42,56,0.45)', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 }}>
-          <T v="micro" c="rgba(248,247,243,0.8)" style={{ fontSize: 9 }}>Wikimedia Commons</T>
-        </View>
-      ) : null}
     </Press>
   );
 }

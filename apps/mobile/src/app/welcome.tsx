@@ -87,7 +87,7 @@ export default function Welcome() {
               <Button label="Begin your first adventure" v="sand" icon="arrow-forward" onPress={() => setStep(1)} />
               {isCloud ? <Button label="I already have an account" v="light" onPress={() => { setMode('signin'); setStep(3); }} /> : null}
             </Animated.View>
-            {hero ? <T v="micro" c="rgba(248,247,243,0.55)">{hero.title} · photo via Wikimedia Commons</T> : null}
+            
           </View>
         </View>
       </View>
