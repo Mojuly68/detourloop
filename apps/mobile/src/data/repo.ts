@@ -5,6 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 import { isCloud, config } from '@/services/config';
 import { supabase } from '@/services/supabase';
+import { appleCredential } from '@/services/apple';
 import { DEFAULT_PREFS } from '@/services/personalization';
 import type { Media, Profile, Replay, SavedPlace, Stop, Trip } from './types';
 
@@ -20,12 +21,13 @@ export interface Repo {
   kind: 'cloud' | 'local';
   // auth
   currentUserId(): Promise<string | null>;
+  /** Starts using the app with no sign-in: a guest account (cloud) or a device profile (demo). No-op if signed in. */
+  startGuest(): Promise<void>;
   /**
-   * 'signed-in': a session exists now. 'confirm': the account needs its email confirmed first.
-   * 'exists': the email already has an account (Supabase hides this behind a session-less, identity-less user).
+   * Sign in with Apple (cloud, iPhone). A guest account is upgraded in place, so its trips and purchases stay.
+   * 'switched' = this Apple ID already had an account, which is now signed in instead.
    */
-  signUp(email: string, password: string, name: string): Promise<'signed-in' | 'confirm' | 'exists'>;
-  signIn(email: string, password: string): Promise<void>;
+  appleSignIn(): Promise<'linked' | 'switched' | 'cancelled'>;
   signOut(): Promise<void>;
   // profile
   getProfile(): Promise<Profile | null>;
@@ -65,16 +67,16 @@ const write = (k: string, v: unknown) => AsyncStorage.setItem(k, JSON.stringify(
 export const LocalRepo: Repo = {
   kind: 'local',
   async currentUserId() { return (await read<Profile | null>(K.profile, null))?.id ?? null; },
-  async signUp(email, _password, name) {
-    // Demo mode: no server, so no password is stored. The profile lives on this device only.
+  async startGuest() {
+    // Demo mode: no server and no account. The profile lives on this device only.
+    if (await read<Profile | null>(K.profile, null)) return;
     const p: Profile = {
-      id: uid(), displayName: name || email.split('@')[0] || 'Traveller', email: email || undefined, prefs: DEFAULT_PREFS,
+      id: uid(), displayName: '', prefs: DEFAULT_PREFS,
       plan: 'free', notifications: false, affinity: {}, dismissed: [], createdAt: new Date().toISOString(),
     };
     await write(K.profile, p);
-    return 'signed-in';
   },
-  async signIn(email, password) { await this.signUp(email, password, ''); },
+  async appleSignIn() { return 'cancelled'; },
   async signOut() { await AsyncStorage.removeItem(K.profile); },
   getProfile: () => read<Profile | null>(K.profile, null),
   saveProfile: (p) => write(K.profile, p),
@@ -195,24 +197,41 @@ async function signed(path: string) {
 export const CloudRepo: Repo = {
   kind: 'cloud',
   async currentUserId() { const { data } = await sb().auth.getSession(); return data.session?.user.id ?? null; },
-  async signUp(email, password, name) {
-    const { data, error } = await sb().auth.signUp({ email, password, options: { data: { display_name: name } } });
+  async startGuest() {
+    const { data } = await sb().auth.getSession();
+    if (data.session) return;
+    const { error } = await sb().auth.signInAnonymously();
     if (error) {
-      if (/already (been )?registered|already exists/i.test(error.message)) return 'exists';
+      if (/anonymous sign-ins are disabled/i.test(error.message)) throw new Error('Guest access is switched off on the server. Please try again later.');
       throw error;
     }
-    if (data.session) return 'signed-in';
-    // With email confirmation on, an existing email comes back as a user with no identities.
-    if (data.user && (data.user.identities?.length ?? 0) === 0) return 'exists';
-    return 'confirm';
   },
-  async signIn(email, password) {
-    const { error } = await sb().auth.signInWithPassword({ email, password });
-    if (error) {
-      if (/email not confirmed/i.test(error.message)) throw new Error('Confirm your email first: open the link we sent you, then sign in.');
-      if (/invalid login credentials/i.test(error.message)) throw new Error('Wrong email or password.');
-      throw error;
+  async appleSignIn() {
+    const cred = await appleCredential();
+    if (!cred) return 'cancelled';
+    const { data: s } = await sb().auth.getSession();
+    let result: 'linked' | 'switched' = 'switched';
+    let done = false;
+    if (s.session?.user.is_anonymous) {
+      // Upgrade the guest account in place: same user id, so trips and the RevenueCat customer stay.
+      const { error } = await sb().auth.linkIdentity({ provider: 'apple', token: cred.token, nonce: cred.nonce });
+      if (!error) { result = 'linked'; done = true; }
+      else if (!/already|exists/i.test(error.message)) throw error;
+      // Otherwise this Apple ID already has an account: sign in to that one below.
     }
+    if (!done) {
+      const { error } = await sb().auth.signInWithIdToken({ provider: 'apple', token: cred.token, nonce: cred.nonce });
+      if (error) throw error;
+    }
+    const { data: u } = await sb().auth.getUser();
+    if (u.user) {
+      const { data: row } = await sb().from('profiles').select('display_name, email').eq('id', u.user.id).maybeSingle();
+      const patch: Record<string, string> = {};
+      if (u.user.email && row?.email !== u.user.email) patch.email = u.user.email;
+      if (cred.name && !row?.display_name) patch.display_name = cred.name;
+      if (Object.keys(patch).length) await sb().from('profiles').update(patch).eq('id', u.user.id);
+    }
+    return result;
   },
   async signOut() { await sb().auth.signOut(); },
   async getProfile() {
@@ -222,7 +241,7 @@ export const CloudRepo: Repo = {
     const tp = data.travel_preferences ?? {};
     const { data: dis } = await sb().from('dismissed_places').select('place_id');
     return {
-      id: data.id, displayName: data.display_name ?? '', email: data.email ?? u.email, avatarUrl: data.avatar_url ?? undefined,
+      id: data.id, displayName: data.display_name ?? '', email: data.email ?? u.email ?? undefined, guest: Boolean(u.is_anonymous), avatarUrl: data.avatar_url ?? undefined,
       prefs: { ...DEFAULT_PREFS, ...(tp.prefs ?? {}) }, personalityOverride: tp.personalityOverride, affinity: tp.affinity ?? {},
       notifications: Boolean(tp.notifications), plan: data.subscription_status, dismissed: (dis ?? []).map((d: any) => d.place_id), createdAt: data.created_at,
     };

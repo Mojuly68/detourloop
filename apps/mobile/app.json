@@ -10,6 +10,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.detourloop.app",
+      "usesAppleSignIn": true,
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "DetourLoop uses your location to find interesting places near you and along your route. It is only used while the app is open.",
         "NSPhotoLibraryUsageDescription": "DetourLoop lets you add trip photos and videos to your TravelReplay.",
@@ -44,6 +45,7 @@
       "expo-font",
       "expo-sharing",
       "expo-web-browser",
+      "expo-apple-authentication",
       [
         "expo-location",
         {

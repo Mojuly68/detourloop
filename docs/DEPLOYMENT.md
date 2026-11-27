@@ -12,8 +12,9 @@ supabase functions deploy render-video
 supabase secrets set OPENAI_API_KEY=sk-... OPENAI_MODEL=gpt-4.1-mini
 ```
 
+- Auth → Sign In / Providers: turn on **Allow anonymous sign-ins** and **Allow manual linking**. The mobile app has no email or password: it starts as a guest (anonymous user) and offers **Sign in with Apple** in Profile, which links Apple to the same user, so trips and the RevenueCat customer stay.
+- Auth → Providers → **Apple**: enabled, Client IDs `com.detourloop.app` (native iOS sign-in needs no secret key). In Apple Developer, the App ID has the "Sign In with Apple" capability; changing capabilities invalidates the App Store profile, so regenerate it and re-fetch it in Codemagic (Code signing identities → iOS provisioning profiles).
 - Auth → URL configuration: add the web app URL and `detourloop://` as redirect URLs.
-- Auth → Email: decide whether to require email confirmation (the app handles both).
 - Prices and quotas: edit the `plans` row in `app_config` (no app release needed).
 
 ## 2. Web app (Vercel or any Node host)

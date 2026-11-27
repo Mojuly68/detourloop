@@ -153,6 +153,8 @@ export interface Profile {
   id: string;
   displayName: string;
   email?: string;
+  /** Cloud mode: a guest (anonymous) account that has not been linked to Sign in with Apple yet. */
+  guest?: boolean;
   avatarUrl?: string;
   prefs: Preferences;
   /** If set by the user, overrides the computed personality. */

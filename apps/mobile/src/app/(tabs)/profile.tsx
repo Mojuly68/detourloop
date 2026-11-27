@@ -12,7 +12,7 @@ import { PERSONALITIES, personalityOf } from '@/services/personalization';
 import { permissionStatus } from '@/services/location';
 import { isCloud, providers } from '@/services/config';
 import { usePlan } from '@/services/subscriptions';
-import { supabase } from '@/services/supabase';
+import { appleAvailable } from '@/services/apple';
 import { BUDGETS, INTERESTS, STYLES, TRANSPORT } from '@/content/options';
 import { color, radius, space } from '@/theme/tokens';
 import { Button, Chip, Field, Icon, Press, T, useToast } from '@/components/ui/primitives';
@@ -38,8 +38,10 @@ export default function ProfileScreen() {
   const [name, setName] = useState(profile?.displayName ?? '');
   const [pick, setPick] = useState<Pick>(null);
   const plan = usePlan(profile);
+  const [apple, setApple] = useState(false);
 
   useEffect(() => {
+    if (isCloud) appleAvailable().then(setApple);
     permissionStatus().then(setLocPerm);
     ImagePicker.getMediaLibraryPermissionsAsync().then((p) => setMediaPerm(p.status)).catch(() => setMediaPerm('unknown'));
   }, []);
@@ -63,6 +65,18 @@ export default function ProfileScreen() {
       toast.show('Export downloaded');
     } else {
       await Share.share({ message: data, title: 'DetourLoop data export' });
+    }
+  }
+
+  async function linkApple() {
+    try {
+      const r = await repo.appleSignIn();
+      if (r === 'cancelled') return;
+      await refresh();
+      if (r === 'linked') toast.show('Signed in with Apple. Your trips are kept with your Apple ID.');
+      else notify('Signed in to your existing account', 'This Apple ID already had a DetourLoop account, so you are now signed in to it. Trips made as a guest on this phone stay with the guest account.');
+    } catch (e: any) {
+      notify('Sign in with Apple did not work', e?.message ?? 'Please try again.');
     }
   }
 
@@ -118,11 +132,10 @@ export default function ProfileScreen() {
 
         <Group title="Account">
           <Row icon="person-outline" label="Display name" value={p.displayName || '—'} onPress={() => { setName(p.displayName ?? ''); setPick('name'); }} />
-          {isCloud ? <Row icon="key-outline" label="Change password" onPress={async () => {
-            if (!p.email || !supabase) return;
-            const { error } = await supabase.auth.resetPasswordForEmail(p.email);
-            notify(error ? 'Could not send the email' : 'Check your inbox', error ? error.message : `We sent a secure link to ${p.email} to set a new password.`);
-          }} /> : null}
+          {isCloud && p.guest && apple ? (
+            <Row icon="logo-apple" label="Sign in with Apple" value="Keep your trips" onPress={linkApple} />
+          ) : null}
+          {isCloud && !p.guest ? <Row icon="logo-apple" label="Signed in with Apple" value={p.email ?? ''} /> : null}
           <Row icon="notifications-outline" label="Notifications" right={<Switch on={p.notifications} />} onPress={() => update({ notifications: !p.notifications })} role="switch" checked={p.notifications} />
         </Group>
 
@@ -133,7 +146,8 @@ export default function ProfileScreen() {
         </Group>
 
         <Group>
-          <Row icon="log-out-outline" label="Sign out" onPress={() => confirm('Sign out?', isCloud ? 'Your trips stay in your account.' : 'Demo mode keeps data only on this device: signing out deletes this demo profile and its trips.', 'Sign out', async () => { if (!isCloud) await repo.deleteAccount(); await signOut(); router.replace('/welcome'); })} />
+          {/* A guest has no way back into their account, so there is no Sign out for guests. */}
+          {!p.guest ? <Row icon="log-out-outline" label="Sign out" onPress={() => confirm('Sign out?', isCloud ? 'Your trips stay in your account.' : 'Demo mode keeps data only on this device: signing out deletes this demo profile and its trips.', 'Sign out', async () => { if (!isCloud) await repo.deleteAccount(); await signOut(); router.replace('/welcome'); })} /> : null}
           <Row icon="trash-outline" label="Delete account" danger onPress={() => confirm('Delete your account?', 'All trips, photos, replays and share links are permanently deleted. This cannot be undone.', 'Delete everything', async () => {
             try { await repo.deleteAccount(); await refresh(); router.replace('/welcome'); } catch (e: any) { notify('Could not delete account', e?.message ?? 'Try again.'); }
           })} />

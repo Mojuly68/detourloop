@@ -1,5 +1,6 @@
-// First-time onboarding: a cinematic intro, then interests → style → account. Four steps, all skippable.
-import React, { useState } from 'react';
+// First-time onboarding: a cinematic intro, then interests → style. No account form: the app starts as a guest
+// (cloud) or a device profile (demo). Returning iPhone users can Sign in with Apple on the first screen.
+import React, { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, View , StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -8,12 +9,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { repo } from '@/data/repo';
 import type { Interest, TravelStyle } from '@/data/types';
 import { isCloud } from '@/services/config';
+import { AppleButton, AppleButtonStyle, AppleButtonType, appleAvailable } from '@/services/apple';
 import { DEFAULT_PREFS } from '@/services/personalization';
 import { useStore } from '@/state/store';
 import { HERO_WIKI } from '@/content/editorial';
 import { INTERESTS, STYLES } from '@/content/options';
 import { color, radius, space } from '@/theme/tokens';
-import { Button, Chip, Field, Icon, Press, T } from '@/components/ui/primitives';
+import { Button, Chip, Icon, Press, T } from '@/components/ui/primitives';
 import { Photo, useWiki } from '@/components/ui/media';
 import { ModeBanner } from '@/components/ui/ModeBanner';
 import { sizedThumb } from '@/services/photos';
@@ -25,46 +27,40 @@ export default function Welcome() {
   const [step, setStep] = useState(0);
   const [interests, setInterests] = useState<Interest[]>([]);
   const [style, setStyle] = useState<TravelStyle>('spontaneous');
-  const [mode, setMode] = useState<'signup' | 'signin'>('signup');
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [apple, setApple] = useState(false);
+
+  useEffect(() => { if (isCloud) appleAvailable().then(setApple); }, []);
 
   const toggle = (k: Interest) => setInterests((a) => (a.includes(k) ? a.filter((x) => x !== k) : [...a, k]));
 
   async function finish() {
     setErr(null);
-    if (isCloud) {
-      if (!/^\S+@\S+\.\S+$/.test(email)) return setErr('Enter a valid email address.');
-      if (password.length < 8) return setErr('Use at least 8 characters for your password.');
-    }
     setBusy(true);
     try {
-      if (mode === 'signup') {
-        const r = await repo.signUp(email.trim(), password, name.trim());
-        if (r === 'exists') {
-          setErr('This email already has an account. Sign in with your password.');
-          setMode('signin');
-          return;
-        }
-        if (r === 'confirm') {
-          setErr('Check your inbox and open the confirmation link, then sign in here.');
-          setMode('signin');
-          return;
-        }
-      } else {
-        await repo.signIn(email.trim(), password);
-      }
+      await repo.startGuest();
       const p = await repo.getProfile();
-      if (p && mode === 'signup') {
-        await repo.saveProfile({ ...p, displayName: name.trim() || p.displayName, prefs: { ...DEFAULT_PREFS, interests: interests.length ? interests : DEFAULT_PREFS.interests, style } });
-      }
+      if (p) await repo.saveProfile({ ...p, prefs: { ...DEFAULT_PREFS, interests: interests.length ? interests : DEFAULT_PREFS.interests, style } });
       await refresh();
       router.replace('/');
     } catch (e: any) {
       setErr(e?.message ?? 'Something went wrong. Please try again.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function signInWithApple() {
+    setErr(null);
+    setBusy(true);
+    try {
+      const r = await repo.appleSignIn();
+      if (r === 'cancelled') return;
+      await refresh();
+      router.replace('/');
+    } catch (e: any) {
+      setErr(e?.message ?? 'Sign in with Apple did not work. Please try again.');
     } finally {
       setBusy(false);
     }
@@ -93,7 +89,11 @@ export default function Welcome() {
             </Animated.View>
             <Animated.View entering={FadeInUp.delay(700)} style={{ gap: space.md, marginTop: space.md }}>
               <Button label="Begin your first adventure" v="sand" icon="arrow-forward" onPress={() => setStep(1)} />
-              {isCloud ? <Button label="I already have an account" v="light" onPress={() => { setMode('signin'); setStep(3); }} /> : null}
+              {apple ? (
+                <AppleButton buttonType={AppleButtonType.SIGN_IN} buttonStyle={AppleButtonStyle.WHITE} cornerRadius={radius.md}
+                  style={{ height: 48, opacity: busy ? 0.6 : 1 }} onPress={busy ? () => {} : signInWithApple} />
+              ) : null}
+              {err ? <T v="small" c={color.white} accessibilityRole="text">{err}</T> : null}
             </Animated.View>
             
           </View>
@@ -106,17 +106,17 @@ export default function Welcome() {
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, backgroundColor: color.paper }}>
       <ScrollView contentContainerStyle={{ paddingTop: insets.top + space.lg, paddingBottom: insets.bottom + space.xxxl, paddingHorizontal: space.xl, gap: space.xl }} keyboardShouldPersistTaps="handled">
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
-          <Press onPress={() => setStep(step === 3 && mode === 'signin' && interests.length === 0 ? 0 : step - 1)} accessibilityLabel="Back" style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
+          <Press onPress={() => setStep(step - 1)} accessibilityLabel="Back" style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
             <Icon name="arrow-back" size={22} />
           </Press>
           <View style={{ flex: 1, flexDirection: 'row', gap: 6 }}>
-            {[1, 2, 3].map((i) => <View key={i} style={{ flex: 1, height: 4, borderRadius: 2, backgroundColor: i <= step ? color.ocean : color.cream }} />)}
+            {[1, 2].map((i) => <View key={i} style={{ flex: 1, height: 4, borderRadius: 2, backgroundColor: i <= step ? color.ocean : color.cream }} />)}
           </View>
         </View>
 
         {step === 1 && (
           <Animated.View entering={FadeInDown.springify().damping(18)} style={{ gap: space.lg }}>
-            <T v="kicker" c={color.teal}>Step 1 of 3</T>
+            <T v="kicker" c={color.teal}>Step 1 of 2</T>
             <T v="h1">What makes a trip great for you?</T>
             <T v="body" c={color.inkSoft}>Pick as many as you like. DetourLoop uses these to choose which real places to show you.</T>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.sm }}>
@@ -128,7 +128,7 @@ export default function Welcome() {
 
         {step === 2 && (
           <Animated.View entering={FadeInDown.springify().damping(18)} style={{ gap: space.lg }}>
-            <T v="kicker" c={color.teal}>Step 2 of 3</T>
+            <T v="kicker" c={color.teal}>Step 2 of 2</T>
             <T v="h1">How do you like to travel?</T>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.md }}>
               {STYLES.map((s) => {
@@ -143,30 +143,8 @@ export default function Welcome() {
                 );
               })}
             </View>
-            <Button label="Continue" icon="arrow-forward" onPress={() => setStep(3)} />
-          </Animated.View>
-        )}
-
-        {step === 3 && (
-          <Animated.View entering={FadeInDown.springify().damping(18)} style={{ gap: space.lg }}>
-            <T v="kicker" c={color.teal}>{mode === 'signup' ? 'Step 3 of 3' : 'Welcome back'}</T>
-            <T v="h1">{mode === 'signup' ? 'Save your journeys' : 'Sign in'}</T>
-            {isCloud ? (
-              <T v="body" c={color.inkSoft}>Your trips, photos and replays are stored privately in your account.</T>
-            ) : (
-              <View style={{ gap: space.sm, backgroundColor: '#F3E2C4', padding: space.lg, borderRadius: radius.md }}>
-                <T v="bodyStrong" c="#6B4A12">Demo mode</T>
-                <T v="small" c="#6B4A12">No account server is connected in this build, so your profile and trips are saved on this device only. No password is needed or stored. Connect Supabase (see README) for real accounts, sync and sharing.</T>
-              </View>
-            )}
-            {mode === 'signup' ? <Field label="Your name" value={name} onChangeText={setName} placeholder="What should we call you?" autoComplete="name" /> : null}
-            <Field label={isCloud ? 'Email' : 'Email (optional)'} value={email} onChangeText={setEmail} placeholder="you@example.com" keyboardType="email-address" autoCapitalize="none" autoComplete="email" />
-            {isCloud ? <Field label="Password" value={password} onChangeText={setPassword} placeholder="At least 8 characters" secureTextEntry autoComplete={mode === 'signup' ? 'new-password' : 'current-password'} /> : null}
             {err ? <T v="small" c={color.danger} accessibilityRole="text">{err}</T> : null}
-            <Button label={mode === 'signup' ? (isCloud ? 'Create account' : 'Start exploring') : 'Sign in'} icon="arrow-forward" loading={busy} onPress={finish} />
-            {isCloud ? (
-              <Button v="ghost" label={mode === 'signup' ? 'I already have an account' : 'Create a new account'} onPress={() => setMode(mode === 'signup' ? 'signin' : 'signup')} />
-            ) : null}
+            <Button label="Start exploring" icon="arrow-forward" loading={busy} onPress={finish} />
           </Animated.View>
         )}
       </ScrollView>
