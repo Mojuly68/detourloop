@@ -36,7 +36,8 @@ module.exports = function withPlayRelease(config) {
     );
 
     // 3. versionCode from the environment when provided.
-    g = g.replace(/versionCode (\d+)/, (_m, n) => `versionCode (System.getenv("ANDROID_VERSION_CODE") ?: "${n}").toInteger()`);
+    // Integer.parseInt(...) as one argument: `versionCode (x).toInteger()` would parse as versionCode(x).toInteger().
+    g = g.replace(/versionCode (\d+)/, (_m, n) => `versionCode Integer.parseInt(System.getenv("ANDROID_VERSION_CODE") ?: "${n}")`);
 
     if (!g.includes('signingConfigs.release') || !g.includes('ANDROID_VERSION_CODE')) {
       throw new Error('withPlayRelease: build.gradle template changed; update plugins/withPlayRelease.js');
