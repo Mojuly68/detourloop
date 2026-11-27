@@ -3,6 +3,7 @@ import React from 'react';
 import { View , StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import type { Trip } from '@/data/types';
+import { roundDistance, unitLabel } from '@/services/units';
 import { color, radius, space } from '@/theme/tokens';
 import { Pill, Press, T } from './primitives';
 import { Photo } from './media';
@@ -31,7 +32,7 @@ export function TripCard({ trip, width, height, onPress }: { trip: Trip; width: 
       </View>
       <View style={{ position: 'absolute', left: space.lg, right: space.lg, bottom: space.lg, gap: 2 }}>
         <T v="h2" c={color.white} numberOfLines={2} style={{ fontSize: 24, lineHeight: 27 }}>{trip.title}</T>
-        <T v="micro" c="rgba(248,247,243,0.85)">{tripDateLabel(trip)} · {stops} stop{stops === 1 ? '' : 's'}{trip.route ? ` · ${Math.round(trip.route.distanceM / 1000)} km` : ''}</T>
+        <T v="micro" c="rgba(248,247,243,0.85)">{tripDateLabel(trip)} · {stops} stop{stops === 1 ? '' : 's'}{trip.route ? ` · ${roundDistance(trip.route.distanceM / 1000).toLocaleString()} ${unitLabel()}` : ''}</T>
       </View>
     </Press>
   );

@@ -147,7 +147,11 @@ export interface Preferences {
   stays: string[];
   maxDetourKm: number;
   favoriteDestinations: string[];
+  /** How distances are shown. Stored values stay in km. Default miles. */
+  units?: Units;
 }
+
+export type Units = 'mi' | 'km';
 
 export interface Profile {
   id: string;

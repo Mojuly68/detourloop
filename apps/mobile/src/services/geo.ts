@@ -1,5 +1,6 @@
 // Pure geometry helpers. No network.
 import type { LngLat, Transport } from '@/data/types';
+import { fmtDistance } from './units';
 
 const R = 6371; // km
 const rad = (d: number) => (d * Math.PI) / 180;
@@ -63,7 +64,8 @@ export function bbox(points: LngLat[]): [number, number, number, number] | null 
   return [w, s, e, n];
 }
 
-export const fmtKm = (km: number) => (km < 1 ? `${Math.round(km * 1000)} m` : km < 10 ? `${km.toFixed(1)} km` : `${Math.round(km)} km`);
+/** Formats a distance given in km in the person's display units (miles by default). */
+export const fmtKm = (km: number) => fmtDistance(km);
 export const fmtMin = (min: number) => {
   if (min < 60) return `${Math.max(1, Math.round(min))} min`;
   const h = Math.floor(min / 60), m = Math.round(min % 60);

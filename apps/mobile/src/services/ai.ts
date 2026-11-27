@@ -12,6 +12,7 @@ import { isCloud } from './config';
 import { callFunction, supabase } from './supabase';
 import { categoryByKey } from './places';
 import { fmtKm, fmtMin } from './geo';
+import { getUnits, kmToUnit, roundDistance } from './units';
 
 async function aiAvailable() {
   if (!isCloud || !supabase) return false;
@@ -52,7 +53,7 @@ export const DiscoveryService = {
           traveller: { interests: ctx.interests, style: ctx.style },
           trip: ctx.tripTitle,
           places: top.map((d) => ({
-            place_id: d.placeId, name: d.name, category: d.categoryLabel, distance_from_route_km: +d.distanceKm.toFixed(1),
+            place_id: d.placeId, name: d.name, category: d.categoryLabel, [getUnits() === 'km' ? 'distance_from_route_km' : 'distance_from_route_miles']: +kmToUnit(d.distanceKm).toFixed(1),
             wikipedia_summary: d.summary?.slice(0, 400),
             tags: Object.fromEntries(Object.entries(d.tags).filter(([k]) => !k.startsWith('name:') && !k.startsWith('addr:')).slice(0, 20)),
           })),
@@ -78,10 +79,10 @@ const fmtDate = (s?: string) => (s ? new Date(s + (s.length === 10 ? 'T12:00:00'
 export function templateStory(trip: Trip, media: Media[]): { title: string; story: string } {
   const visited = trip.stops.filter((s) => s.status !== 'skipped');
   const names = visited.map((s) => s.name);
-  const km = trip.route ? Math.round(trip.route.distanceM / 1000) : undefined;
+  const dist = trip.route ? fmtKm(trip.route.distanceM / 1000) : undefined;
   const start = fmtDate(trip.startDate);
   const p1 = `Your journey began in ${trip.origin.name}${start ? ` on ${start}` : ''}` +
-    (trip.destination ? ` and led to ${trip.destination.name}` : '') + (km ? `, ${km.toLocaleString()} km in all.` : '.');
+    (trip.destination ? ` and led to ${trip.destination.name}` : '') + (dist ? `, ${dist} in all.` : '.');
   const p2 = names.length
     ? `Along the way you stopped at ${names.length === 1 ? names[0] : names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1]}.`
     : 'You kept this one simple, with no planned stops in between.';
@@ -107,7 +108,8 @@ export const ReplayStoryService = {
         task: 'replay_story',
         input: {
           origin: trip.origin.name, destination: trip.destination?.name, start_date: trip.startDate, end_date: trip.endDate,
-          distance_km: trip.route ? Math.round(trip.route.distanceM / 1000) : null,
+          // Give the AI the distance in the person's units, so the story uses miles or km as they chose.
+          [getUnits() === 'km' ? 'distance_km' : 'distance_miles']: trip.route ? roundDistance(trip.route.distanceM / 1000) : null,
           stops: trip.stops.filter((s) => s.status !== 'skipped').map((s) => ({ name: s.name, category: s.category })),
           captions: media.map((m) => m.caption).filter(Boolean),
           notes: trip.notes.map((n) => n.text),
@@ -143,7 +145,7 @@ export const TravelAssistantService = {
         task: 'assistant',
         input: {
           question,
-          candidates: top.map((d) => ({ place_id: d.placeId, name: d.name, category: d.categoryLabel, distance_km: +d.distanceKm.toFixed(1), est_extra_minutes: d.detourMin, summary: d.summary?.slice(0, 240), opening_hours_osm: d.openingHours })),
+          candidates: top.map((d) => ({ place_id: d.placeId, name: d.name, category: d.categoryLabel, [getUnits() === 'km' ? 'distance_km' : 'distance_miles']: +kmToUnit(d.distanceKm).toFixed(1), est_extra_minutes: d.detourMin, summary: d.summary?.slice(0, 240), opening_hours_osm: d.openingHours })),
         },
       });
       const ids = new Set(res.result.place_ids);

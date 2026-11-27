@@ -4,6 +4,7 @@ import { repo, uid } from '@/data/repo';
 import type { Discovery, Profile, SavedPlace, Stop, Trip } from '@/data/types';
 import { supabase } from '@/services/supabase';
 import { learn } from '@/services/personalization';
+import { setUnits } from '@/services/units';
 import { bestInsertIndex, getRoute, tripWaypoints } from '@/services/routing';
 
 interface Store {
@@ -38,7 +39,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       const id = await repo.currentUserId();
       if (!id) { setP(null); setTrips([]); setSaved([]); return; }
       const [p, t, s] = await Promise.all([repo.getProfile(), repo.listTrips(), repo.listSaved()]);
-      setP(p); setTrips(t); setSaved(s);
+      setUnits(p?.prefs.units); setP(p); setTrips(t); setSaved(s);
     } catch (e) {
       console.warn('refresh failed', e);
     } finally {
@@ -53,7 +54,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     return () => data.subscription.unsubscribe();
   }, [refresh]);
 
-  const setProfile = useCallback(async (p: Profile) => { setP(p); await repo.saveProfile(p); }, []);
+  const setProfile = useCallback(async (p: Profile) => { setUnits(p.prefs.units); setP(p); await repo.saveProfile(p); }, []);
 
   const saveTrip = useCallback(async (t: Trip) => {
     setTrips((all) => [t, ...all.filter((x) => x.id !== t.id)].sort((a, b) => b.createdAt.localeCompare(a.createdAt)));

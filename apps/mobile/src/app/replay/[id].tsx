@@ -11,6 +11,7 @@ import type { Media, Replay, Trip } from '@/data/types';
 import { useStore } from '@/state/store';
 import { ReplayStoryService } from '@/services/ai';
 import { distanceToLineKm, fmtKm, fmtMin } from '@/services/geo';
+import { roundDistance, unitLabel } from '@/services/units';
 import { pickAndAdd } from '@/services/media';
 import { hasEntitlement, usePlan } from '@/services/subscriptions';
 import { isCloud } from '@/services/config';
@@ -186,7 +187,7 @@ export default function ReplayScreen() {
           <Animated.View entering={FadeInUp.delay(450).springify().damping(16)}><T v="hero" c={color.white}>Your adventure is ready to replay.</T></Animated.View>
           <Animated.View entering={FadeInUp.delay(600)}><T v="body" c="rgba(248,247,243,0.85)">We've brought your journey together. Relive the places, moments, and memories that made it special.</T></Animated.View>
           <Animated.View entering={FadeInUp.delay(700)} style={{ flexDirection: 'row', gap: space.lg }}>
-            <Stat n={visited.length} l="stops" light /><Stat n={photos.length} l="photos" light /><Stat n={videos.length} l="videos" light />{trip.route ? <Stat n={Math.round(trip.route.distanceM / 1000)} l="km" light /> : null}
+            <Stat n={visited.length} l="stops" light /><Stat n={photos.length} l="photos" light /><Stat n={videos.length} l="videos" light />{trip.route ? <Stat n={roundDistance(trip.route.distanceM / 1000)} l={unitLabel()} light /> : null}
           </Animated.View>
           <Animated.View entering={FadeInUp.delay(800)} style={{ gap: space.sm }}>
             <Button v="sand" icon="film" label="Create My Replay" loading={creating} onPress={create} />
@@ -239,7 +240,7 @@ export default function ReplayScreen() {
         <View style={{ marginTop: space.xxl, marginHorizontal: space.xl, padding: space.xl, borderRadius: radius.lg, backgroundColor: color.cream, gap: space.lg }}>
           <T v="kicker" c={color.teal}>By the numbers</T>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', rowGap: space.lg }}>
-            <Stat n={trip.route ? Math.round(trip.route.distanceM / 1000) : '—'} l={trip.route?.source === 'straight-line' ? 'km (straight line)' : 'km planned route'} />
+            <Stat n={trip.route ? roundDistance(trip.route.distanceM / 1000) : '—'} l={trip.route?.source === 'straight-line' ? `${unitLabel()} (straight line)` : `${unitLabel()} planned route`} />
             <Stat n={visited.length + 1 + (trip.destination ? 1 : 0)} l="destinations" />
             <Stat n={visited.length} l="stops" />
             <Stat n={days} l={days === 1 ? 'day' : 'days'} />

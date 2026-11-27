@@ -1,6 +1,6 @@
 // Bottom sheet: modal with drag-to-dismiss (Gesture Handler + Reanimated).
-import React, { useEffect } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Keyboard, Modal, Platform, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -11,6 +11,15 @@ export function Sheet({ visible, onClose, children, maxHeight = 0.88, label }: {
   const insets = useSafeAreaInsets();
   const y = useSharedValue(height);
   const fade = useSharedValue(0);
+  // The sheet sits on the bottom edge, so an open keyboard would cover it completely: lift it above the keyboard.
+  const [kb, setKb] = useState(0);
+
+  useEffect(() => {
+    if (Platform.OS === 'web') return;
+    const show = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow', (e) => setKb(e.endCoordinates.height));
+    const hide = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide', () => setKb(0));
+    return () => { show.remove(); hide.remove(); };
+  }, []);
 
   useEffect(() => {
     if (visible) { y.value = withSpring(0, { damping: 22, stiffness: 200 }); fade.value = withTiming(1, { duration: 220 }); }
@@ -41,7 +50,7 @@ export function Sheet({ visible, onClose, children, maxHeight = 0.88, label }: {
           <Pressable style={{ flex: 1 }} onPress={close} accessibilityLabel="Close" />
         </Animated.View>
         <Animated.View accessibilityViewIsModal accessibilityLabel={label}
-          style={[{ position: 'absolute', left: 0, right: 0, bottom: 0, maxHeight: height * maxHeight, backgroundColor: color.white, borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, paddingBottom: insets.bottom + space.lg, maxWidth: 480, alignSelf: 'center', width: '100%' }, sheet]}>
+          style={[{ position: 'absolute', left: 0, right: 0, bottom: kb, maxHeight: (height - kb - insets.top) * maxHeight, backgroundColor: color.white, borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, paddingBottom: kb ? space.lg : insets.bottom + space.lg, maxWidth: 480, alignSelf: 'center', width: '100%' }, sheet]}>
           <GestureDetector gesture={pan}>
             <View style={{ alignItems: 'center', paddingVertical: space.md }} accessibilityLabel="Drag down to close">
               <View style={{ width: 44, height: 5, borderRadius: 3, backgroundColor: '#CFC6B5' }} />

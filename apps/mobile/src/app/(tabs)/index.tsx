@@ -148,7 +148,7 @@ export default function Discover() {
           ) : nearErr ? (
             <ErrorState message={nearErr} onRetry={() => loadNear(loc.status === 'ok' ? { lat: loc.lat!, lng: loc.lng! } : undefined)} />
           ) : near && near.length === 0 ? (
-            <T v="small" c={color.inkSoft} style={{ marginHorizontal: space.xl }}>No mapped places matched your interests within 30 km.</T>
+            <T v="small" c={color.inkSoft} style={{ marginHorizontal: space.xl }}>No mapped places matched your interests within {fmtKm(30)}.</T>
           ) : (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: space.xl, gap: space.md, paddingTop: 4, paddingBottom: space.xl }}>
               {near!.map((d) => (

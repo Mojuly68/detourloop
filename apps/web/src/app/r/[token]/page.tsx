@@ -69,7 +69,7 @@ export default async function SharedReplay({ params }: { params: Promise<{ token
         <div className="wrap" style={{ position: 'relative', padding: '0 0 10vh', display: 'grid', gap: 16 }}>
           <span className="kicker rise" style={{ color: 'var(--sand)' }}>TravelReplay{date ? ` · ${date}` : ''}</span>
           <h1 className="rise d1" style={{ fontSize: 'clamp(44px, 7vw, 92px)', lineHeight: 1 }}>{s.title}</h1>
-          <p className="rise d2" style={{ color: 'rgba(248,247,243,.85)' }}>{points.length} places{km ? ` · ${km} km` : ''} · {s.media.filter((m) => m.type === 'photo').length} photos</p>
+          <p className="rise d2" style={{ color: 'rgba(248,247,243,.85)' }}>{points.length} places{km ? ` · ${Math.round(km / 1.609344).toLocaleString('en-US')} mi` : ''} · {s.media.filter((m) => m.type === 'photo').length} photos</p>
         </div>
       </section>
 

@@ -9,6 +9,7 @@ import { repo } from '@/data/repo';
 import type { Profile } from '@/data/types';
 import { useStore } from '@/state/store';
 import { PERSONALITIES, personalityOf } from '@/services/personalization';
+import { detourChoices, fmtDetour, getUnits } from '@/services/units';
 import { permissionStatus } from '@/services/location';
 import { isCloud, providers } from '@/services/config';
 import { usePlan } from '@/services/subscriptions';
@@ -18,13 +19,11 @@ import { color, radius, space } from '@/theme/tokens';
 import { Button, Chip, Field, Icon, Press, T, useToast } from '@/components/ui/primitives';
 import { Photo } from '@/components/ui/media';
 import { Sheet } from '@/components/ui/Sheet';
-import { ModeBanner } from '@/components/ui/ModeBanner';
 import { confirm, notify } from '@/components/ui/confirm';
 
 const STAYS = ['Campgrounds', 'Cabins', 'Boutique hotels', 'Hostels', 'Glamping', 'Mountain huts'];
-const DETOURS = [5, 10, 20, 40, 80];
 const PACES = ['slow', 'balanced', 'packed'] as const;
-type Pick = 'personality' | 'interests' | 'style' | 'pace' | 'budget' | 'transport' | 'stays' | 'detour' | 'name' | null;
+type Pick = 'personality' | 'interests' | 'style' | 'pace' | 'budget' | 'transport' | 'stays' | 'detour' | 'units' | 'name' | null;
 
 const cap = (s: string) => s[0].toUpperCase() + s.slice(1);
 const list = (xs: string[], none = 'None') => (xs.length === 0 ? none : xs.length <= 2 ? xs.join(', ') : `${xs.slice(0, 2).join(', ')} +${xs.length - 2}`);
@@ -68,6 +67,12 @@ export default function ProfileScreen() {
     }
   }
 
+  function saveName() {
+    update({ displayName: name.trim() });
+    setPick(null);
+    toast.show('Name saved');
+  }
+
   async function linkApple() {
     try {
       const r = await repo.appleSignIn();
@@ -94,14 +99,19 @@ export default function ProfileScreen() {
       <ScrollView contentContainerStyle={{ paddingTop: insets.top + space.lg, paddingBottom: 40, paddingHorizontal: space.lg, gap: space.xl }}>
         {/* Header */}
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
-          <Press onPress={pickAvatar} accessibilityLabel="Change profile photo" style={{ width: 56, height: 56, borderRadius: 28, overflow: 'hidden' }}>
-            {p.avatarUrl ? <Photo uri={p.avatarUrl} style={{ width: 56, height: 56 }} /> : (
-              <View style={{ width: 56, height: 56, backgroundColor: color.ocean, alignItems: 'center', justifyContent: 'center' }}><T v="h2" c={color.sand}>{(p.displayName || 'T')[0].toUpperCase()}</T></View>
-            )}
+          <Press onPress={pickAvatar} accessibilityLabel="Change profile photo" style={{ width: 60, height: 60 }}>
+            <View style={{ width: 56, height: 56, borderRadius: 28, overflow: 'hidden' }}>
+              {p.avatarUrl ? <Photo uri={p.avatarUrl} style={{ width: 56, height: 56 }} /> : (
+                <View style={{ width: 56, height: 56, backgroundColor: color.ocean, alignItems: 'center', justifyContent: 'center' }}><T v="h2" c={color.sand}>{(p.displayName || 'T')[0].toUpperCase()}</T></View>
+              )}
+            </View>
+            {/* Edit badge: makes it obvious the photo can be changed. */}
+            <View style={{ position: 'absolute', right: 0, bottom: 0, width: 24, height: 24, borderRadius: 12, backgroundColor: color.teal, borderWidth: 2, borderColor: color.paper, alignItems: 'center', justifyContent: 'center' }}>
+              <Icon name="camera" size={12} color={color.white} />
+            </View>
           </Press>
-          <View style={{ flex: 1, gap: 4 }}>
+          <View style={{ flex: 1 }}>
             <T v="h2" numberOfLines={1}>{p.displayName || 'Traveller'}</T>
-            {p.email ? <T v="small" c={color.inkSoft} numberOfLines={1}>{p.email}</T> : <ModeBanner compact />}
           </View>
         </View>
 
@@ -127,7 +137,8 @@ export default function ProfileScreen() {
           <Row icon="wallet-outline" label="Budget" value={label(BUDGETS, p.prefs.budget)} onPress={() => setPick('budget')} />
           <Row icon="car-outline" label="Getting around" value={label(TRANSPORT, p.prefs.transport)} onPress={() => setPick('transport')} />
           <Row icon="bed-outline" label="Places to stay" value={list(p.prefs.stays, 'Any')} onPress={() => setPick('stays')} />
-          <Row icon="git-branch-outline" label="Maximum detour" value={`${p.prefs.maxDetourKm} km`} onPress={() => setPick('detour')} />
+          <Row icon="git-branch-outline" label="Maximum detour" value={fmtDetour(p.prefs.maxDetourKm)} onPress={() => setPick('detour')} />
+          <Row icon="resize-outline" label="Units" value={getUnits() === 'km' ? 'Kilometers' : 'Miles'} onPress={() => setPick('units')} />
         </Group>
 
         <Group title="Account">
@@ -135,7 +146,7 @@ export default function ProfileScreen() {
           {isCloud && p.guest && apple ? (
             <Row icon="logo-apple" label="Sign in with Apple" value="Keep your trips" onPress={linkApple} />
           ) : null}
-          {isCloud && !p.guest ? <Row icon="logo-apple" label="Signed in with Apple" value={p.email ?? ''} /> : null}
+          {isCloud && !p.guest ? <Row icon="logo-apple" label="Signed in with Apple" right={<Icon name="checkmark-circle" size={18} color={color.teal} />} /> : null}
           <Row icon="notifications-outline" label="Notifications" right={<Switch on={p.notifications} />} onPress={() => update({ notifications: !p.notifications })} role="switch" checked={p.notifications} />
         </Group>
 
@@ -192,13 +203,19 @@ export default function ProfileScreen() {
           </Picker>
         ) : pick === 'detour' ? (
           <Picker title="Maximum detour" note="How far off your route a suggestion may be.">
-            {DETOURS.map((k) => <Chip key={k} label={`${k} km`} selected={p.prefs.maxDetourKm === k} onPress={() => prefs({ maxDetourKm: k })} />)}
+            {detourChoices().map((c) => <Chip key={c.value} label={c.label} selected={Math.abs(p.prefs.maxDetourKm - c.km) < 0.5} onPress={() => prefs({ maxDetourKm: c.km })} />)}
+          </Picker>
+        ) : pick === 'units' ? (
+          <Picker title="Distance units" note="Changes how distances are shown everywhere in the app.">
+            <Chip label="Miles" selected={getUnits() === 'mi'} onPress={() => prefs({ units: 'mi' })} />
+            <Chip label="Kilometers" selected={getUnits() === 'km'} onPress={() => prefs({ units: 'km' })} />
           </Picker>
         ) : pick === 'name' ? (
           <View style={{ gap: space.md }}>
             <T v="h3">Display name</T>
-            <Field value={name} onChangeText={setName} autoFocus />
-            <Button label="Save" icon="checkmark" disabled={!name.trim()} onPress={() => { update({ displayName: name.trim() }); setPick(null); toast.show('Name saved'); }} />
+            <Field value={name} onChangeText={setName} autoFocus maxLength={80} placeholder="Your name" autoComplete="name" textContentType="name"
+              returnKeyType="done" onSubmitEditing={() => { if (name.trim()) saveName(); }} />
+            <Button label="Save" icon="checkmark" disabled={!name.trim()} onPress={saveName} />
           </View>
         ) : null}
         {pick && pick !== 'name' ? <Button v="secondary" label="Done" onPress={() => setPick(null)} /> : null}

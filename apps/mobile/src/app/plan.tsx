@@ -11,12 +11,12 @@ import { searchPlaces, reverseGeocode } from '@/services/geocoding';
 import { getRoute } from '@/services/routing';
 import { locateOnce } from '@/services/location';
 import { fmtKm, fmtMin } from '@/services/geo';
+import { detourChoices, unitWord } from '@/services/units';
 import { BUDGETS, INTERESTS, STYLES, TRANSPORT } from '@/content/options';
 import { color, radius, space } from '@/theme/tokens';
 import { Button, Chip, Icon, Press, T } from '@/components/ui/primitives';
 import { PlaceSearch } from '@/components/ui/PlaceSearch';
 
-const DETOURS = [5, 10, 20, 40, 80];
 const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
 export default function Plan() {
@@ -31,7 +31,7 @@ export default function Plan() {
   const [startOffset, setStartOffset] = useState(0);
   const [days, setDays] = useState(2);
   const [transport, setTransport] = useState<Transport>(prefs?.transport ?? 'driving');
-  const [maxKm, setMaxKm] = useState(prefs?.maxDetourKm ?? 20);
+  const [maxKm, setMaxKm] = useState(prefs?.maxDetourKm ?? 16.1);
   const [budget, setBudget] = useState<Budget>(prefs?.budget ?? 'moderate');
   const [interests, setInterests] = useState<Interest[]>(params.interests ? (params.interests.split(',') as Interest[]) : prefs?.interests ?? []);
   const [style, setStyle] = useState<TravelStyle>(prefs?.style ?? 'spontaneous');
@@ -159,14 +159,17 @@ export default function Plan() {
           </View>
           <T v="label" c={color.inkSoft} style={{ marginTop: space.lg }}>How far off the route will you go?</T>
           <View style={{ flexDirection: 'row', gap: 6, marginTop: space.sm }}>
-            {DETOURS.map((k) => (
-              <Press key={k} onPress={() => setMaxKm(k)} accessibilityRole="radio" accessibilityState={{ selected: maxKm === k }} accessibilityLabel={`${k} kilometres`}
-                style={{ flex: 1, height: 48, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center', backgroundColor: maxKm >= k ? color.teal : color.cream }}>
-                <T v="label" c={maxKm >= k ? color.white : color.charcoal}>{k}</T>
-              </Press>
-            ))}
+            {detourChoices().map((c) => {
+              const on = maxKm >= c.km - 0.5;
+              return (
+                <Press key={c.value} onPress={() => setMaxKm(c.km)} accessibilityRole="radio" accessibilityState={{ selected: Math.abs(maxKm - c.km) < 0.5 }} accessibilityLabel={`${c.value} ${unitWord()}`}
+                  style={{ flex: 1, height: 48, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center', backgroundColor: on ? color.teal : color.cream }}>
+                  <T v="label" c={on ? color.white : color.charcoal}>{c.value}</T>
+                </Press>
+              );
+            })}
           </View>
-          <T v="micro" c={color.gray} style={{ marginTop: 4 }}>km from your route</T>
+          <T v="micro" c={color.gray} style={{ marginTop: 4 }}>{unitWord()} from your route</T>
           <T v="label" c={color.inkSoft} style={{ marginTop: space.lg }}>Budget</T>
           <View style={{ flexDirection: 'row', gap: 6, marginTop: space.sm, flexWrap: 'wrap' }}>
             {BUDGETS.map((b) => <Chip key={b.key} label={`${b.sign} ${b.label}`} selected={budget === b.key} onPress={() => setBudget(b.key)} />)}

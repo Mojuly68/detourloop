@@ -57,6 +57,7 @@ export const DEFAULT_PREFS: Preferences = {
   budget: 'moderate',
   transport: 'driving',
   stays: [],
-  maxDetourKm: 20,
+  maxDetourKm: 16.1, // 10 miles
   favoriteDestinations: [],
+  units: 'mi',
 };

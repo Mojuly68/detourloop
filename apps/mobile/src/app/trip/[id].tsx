@@ -11,6 +11,7 @@ import { useStore } from '@/state/store';
 import { CATEGORY, categoriesFor, categoryByKey, discoverAlongRoute, discoverNearby, enrich } from '@/services/places';
 import { DiscoveryService } from '@/services/ai';
 import { fmtKm, fmtMin } from '@/services/geo';
+import { fmtDetour } from '@/services/units';
 import { color, radius, shadow, space } from '@/theme/tokens';
 import { Button, Chip, EmptyState, ErrorState, Icon, IconButton, Pill, Press, Skeleton, SourceTag, T, useToast } from '@/components/ui/primitives';
 import { DiscoveryCard } from '@/components/ui/DiscoveryCard';
@@ -132,7 +133,7 @@ export default function TripScreen() {
             <T v="kicker" c={color.teal}>{tripDateLabel(trip)} · {trip.transport}</T>
             <T v="h1">{trip.title}</T>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.md, marginTop: 4 }}>
-              {trip.route ? <T v="small" c={color.inkSoft}>{fmtKm(trip.route.distanceM / 1000)} · {fmtMin(trip.route.durationS / 60)} on the road</T> : <T v="small" c={color.inkSoft}>Open-ended · exploring within {trip.maxDetourKm} km</T>}
+              {trip.route ? <T v="small" c={color.inkSoft}>{fmtKm(trip.route.distanceM / 1000)} · {fmtMin(trip.route.durationS / 60)} on the road</T> : <T v="small" c={color.inkSoft}>Open-ended · exploring within {fmtDetour(trip.maxDetourKm)}</T>}
               {activeStops.length ? <T v="small" c={color.inkSoft}>{activeStops.length} stops · ~{fmtMin(visitMin)} visiting (est.)</T> : null}
             </View>
             {trip.route?.source === 'straight-line' ? <Pill tone="warn" icon="warning-outline" label="Routing service unavailable — showing a straight line" style={{ marginTop: 6 }} /> : null}
@@ -157,7 +158,7 @@ export default function TripScreen() {
                 ))}
               </ScrollView>
               {list && !busy ? <View style={{ paddingHorizontal: space.xl, flexDirection: 'row', alignItems: 'center', gap: space.sm, flexWrap: 'wrap' }}>
-                <T v="micro" c={color.inkSoft}>Real places from OpenStreetMap and Wikipedia{trip.route ? ` within ${trip.maxDetourKm} km of your route` : ''}. Reasons:</T>
+                <T v="micro" c={color.inkSoft}>Real places from OpenStreetMap and Wikipedia{trip.route ? ` within ${fmtDetour(trip.maxDetourKm)} of your route` : ''}. Reasons:</T>
                 <SourceTag source={aiSource} />
               </View> : null}
               {busy ? (
@@ -168,7 +169,7 @@ export default function TripScreen() {
               ) : err ? (
                 <ErrorState message={err} onRetry={() => load(trip)} />
               ) : shown.length === 0 ? (
-                <EmptyState icon="telescope-outline" title="Nothing mapped here yet" body="Try more interests or a wider detour distance. Remote routes have fewer mapped places." action="Widen to 40 km" onAction={async () => { const t = { ...trip, maxDetourKm: Math.max(40, trip.maxDetourKm) }; await saveTrip(t); load(t); }} />
+                <EmptyState icon="telescope-outline" title="Nothing mapped here yet" body="Try more interests or a wider detour distance. Remote routes have fewer mapped places." action={`Widen to ${fmtDetour(40.2)}`} onAction={async () => { const t = { ...trip, maxDetourKm: Math.max(40.2, trip.maxDetourKm) }; await saveTrip(t); load(t); }} />
               ) : (
                 <View style={{ paddingHorizontal: space.xl, gap: space.lg }}>
                   {shown.map((d, i) => (

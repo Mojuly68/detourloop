@@ -8,6 +8,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Image } from 'expo-image';
 import type { Media, Stop, Trip } from '@/data/types';
 import { imageSource } from '@/services/http';
+import { roundDistance, unitLabel } from '@/services/units';
 import { color, space } from '@/theme/tokens';
 import { IconButton, T } from '@/components/ui/primitives';
 
@@ -40,7 +41,7 @@ export function ReplayPlayer({ visible, onClose, trip, media, template, aspect, 
     const photos = media.filter((m) => m.type === 'photo');
     const fmt = (s?: string) => (s ? new Date(s).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' }) : undefined);
     return [
-      { kind: 'title', title, sub: [trip.startDate && fmt(trip.startDate + 'T12:00:00'), trip.route ? `${Math.round(trip.route.distanceM / 1000)} km` : undefined].filter(Boolean).join(' · ') },
+      { kind: 'title', title, sub: [trip.startDate && fmt(trip.startDate + 'T12:00:00'), trip.route ? `${roundDistance(trip.route.distanceM / 1000).toLocaleString()} ${unitLabel()}` : undefined].filter(Boolean).join(' · ') },
       ...photos.map((m) => ({ kind: 'photo' as const, uri: m.uri, title: m.caption || (m.stopId && byStop.get(m.stopId)?.name) || trip.destination?.name || trip.title, sub: fmt(m.capturedAt) })),
       ...(photos.length === 0 ? trip.stops.filter((s) => s.status !== 'skipped').map((s) => ({ kind: 'photo' as const, uri: s.imageUrl, title: s.name, sub: undefined })) : []),
       { kind: 'end', title: 'Every journey deserves a story.', sub: 'DetourLoop · TravelReplay' },
