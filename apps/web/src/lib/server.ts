@@ -39,7 +39,7 @@ export async function wiki(title: string, width = 1280): Promise<WikiSummary | n
 
 export const DEFAULT_PLANS = {
   free: { price: 0, period: null as string | null },
-  plus: { price: 2.25, period: 'month' },
+  plus: { price: 2.29, period: 'month' },
   annual: { price: 24, period: 'year' },
 };
 

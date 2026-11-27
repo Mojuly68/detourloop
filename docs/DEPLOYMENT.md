@@ -55,11 +55,11 @@ Web build of the mobile app (optional, e.g. for a browser beta): `npx expo expor
 
 ## 4. Payments
 
-**Stripe (web)**: create two recurring prices ($2.25/month, $24/year), set `STRIPE_PRICE_PLUS_MONTHLY` / `STRIPE_PRICE_PLUS_ANNUAL`, and add a webhook to `https://<web>/api/stripe-webhook` for `customer.subscription.created|updated|deleted`; put its signing secret in `STRIPE_WEBHOOK_SECRET`.
+**Stripe (web)**: create two recurring prices ($2.29/month, $24/year), set `STRIPE_PRICE_PLUS_MONTHLY` / `STRIPE_PRICE_PLUS_ANNUAL`, and add a webhook to `https://<web>/api/stripe-webhook` for `customer.subscription.created|updated|deleted`; put its signing secret in `STRIPE_WEBHOOK_SECRET`.
 
 **RevenueCat (iOS/Android)**: the SDK (`react-native-purchases`) is installed and wired in `src/services/revenuecat.native.ts` (the web uses Stripe instead). It needs a native build (Codemagic / EAS); in Expo Go it runs in RevenueCat's preview mode.
 
-1. **App Store Connect** → DetourLoop → Monetization → Subscriptions: create a subscription group "DetourLoop Plus" with two auto-renewable products, `detourloop_plus_monthly` (1 month) and `detourloop_plus_annual` (1 year). Fill in price, display name and a review screenshot. Accept the Paid Apps agreement (Business section) or the store returns no products.
+1. **App Store Connect** → DetourLoop → Monetization → Subscriptions: create a subscription group "DetourLoop Plus" with two auto-renewable products, `detourloop_monthly` (1 month, $2.29) and `detourloop_annual` (1 year, $24.00). Fill in price, display name and a review screenshot. Accept the Paid Apps agreement (Business section) or the store returns no products.
 2. **RevenueCat** → add the iOS app (bundle ID `com.detourloop.app`) with an **In-App Purchase Key** (App Store Connect → Users and Access → Integrations → In-App Purchase). Import both products.
 3. **Entitlement** `plus` with both products attached. **Offering** `default` (current) with the packages **Monthly** (`$rc_monthly` → monthly product) and **Annual** (`$rc_annual` → annual product). The paywall reads these two packages and shows the store's localised prices.
 4. **Custom URL scheme** (app settings): `detourloop`.

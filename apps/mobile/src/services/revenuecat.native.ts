@@ -3,7 +3,7 @@
 // RevenueCat dashboard setup this code expects:
 //   Entitlement  "plus"
 //   Offering     the current offering, with a Monthly package ($rc_monthly) and an Annual package ($rc_annual)
-//   Products     e.g. detourloop_plus_monthly / detourloop_plus_annual in App Store Connect and Google Play
+//   Products     detourloop_monthly ($2.29) / detourloop_annual ($24) in App Store Connect
 import { Platform } from 'react-native';
 import Purchases, { LOG_LEVEL, type CustomerInfo, type PurchasesPackage } from 'react-native-purchases';
 import { config } from './config';

@@ -46,7 +46,7 @@ export interface PlanInfo { id: 'free' | 'plus' | 'annual'; price: number; curre
 
 export const DEFAULT_PLANS: PlanInfo[] = [
   { id: 'free', price: 0, currency: 'USD', period: null, aiPerDay: 10, activeTrips: 3, mediaMb: 500 },
-  { id: 'plus', price: 2.25, currency: 'USD', period: 'month', aiPerDay: 200, activeTrips: 50, mediaMb: 20000 },
+  { id: 'plus', price: 2.29, currency: 'USD', period: 'month', aiPerDay: 200, activeTrips: 50, mediaMb: 20000 },
   { id: 'annual', price: 24, currency: 'USD', period: 'year', aiPerDay: 200, activeTrips: 50, mediaMb: 20000 },
 ];
 
