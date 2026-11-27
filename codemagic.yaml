@@ -58,6 +58,49 @@ workflows:
     #     recipients:
     #       - you@example.com
 
+  android-play:
+    # Signed app bundle (.aab) for Google Play. Start it by hand (Start new build → android-play).
+    # Needs the upload keystore in Codemagic → Code signing identities → Android keystores,
+    # reference name "detourloop_upload". The keystore and its passwords stay in Codemagic, never in git.
+    # The very first bundle is uploaded by hand in Play Console (Testing → Internal testing);
+    # after that, uncomment `publishing:` below once a Google Play service account is connected.
+    name: DetourLoop · Google Play bundle
+    max_build_duration: 90
+    instance_type: mac_mini_m2
+    working_directory: apps/mobile
+    environment:
+      node: 22
+      java: 17
+      android_signing:
+        - detourloop_upload
+      vars:
+        EXPO_PUBLIC_SUPABASE_URL: https://guiyyrtagdbiovobfmuu.supabase.co
+        EXPO_PUBLIC_SUPABASE_ANON_KEY: sb_publishable_lXqHl6RO9pQPvfw3ftYhTw_Xe-hXPJo
+        # RevenueCat public SDK key for the Google Play app (goog_…). Public by design.
+        # EXPO_PUBLIC_REVENUECAT_ANDROID_KEY: goog_xxxxxxxxxxxxxxxxxxxxxxxxxx
+    scripts:
+      - name: Install dependencies
+        script: npm ci
+      - name: Expo prebuild (generate android/, adds release signing via plugins/withPlayRelease.js)
+        script: npx expo prebuild --platform android --clean --no-install
+      - name: Point Gradle at the Android SDK
+        script: echo "sdk.dir=$ANDROID_SDK_ROOT" > android/local.properties
+      - name: Build signed app bundle
+        script: |
+          # Play needs a higher versionCode for every upload; this workflow's build number does that.
+          export ANDROID_VERSION_CODE=$BUILD_NUMBER
+          cd android
+          # All CPU architectures: Play serves each phone only the part it needs.
+          ./gradlew bundleRelease
+    artifacts:
+      - android/app/build/outputs/bundle/release/*.aab
+      - android/app/build/outputs/mapping/release/mapping.txt
+    # publishing:
+    #   google_play:
+    #     credentials: $GCLOUD_SERVICE_ACCOUNT_CREDENTIALS   # secret variable group in Codemagic
+    #     track: internal
+    #     submit_as_draft: true
+
   ios-testflight:
     name: DetourLoop · iOS TestFlight
     max_build_duration: 90
