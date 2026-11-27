@@ -42,14 +42,22 @@ export default function Welcome() {
     }
     setBusy(true);
     try {
-      if (mode === 'signup') await repo.signUp(email.trim(), password, name.trim());
-      else await repo.signIn(email.trim(), password);
-      const p = await repo.getProfile();
-      if (!p && isCloud && mode === 'signup') {
-        setErr('Check your inbox to confirm your email, then sign in.');
-        setMode('signin');
-        return;
+      if (mode === 'signup') {
+        const r = await repo.signUp(email.trim(), password, name.trim());
+        if (r === 'exists') {
+          setErr('This email already has an account. Sign in with your password.');
+          setMode('signin');
+          return;
+        }
+        if (r === 'confirm') {
+          setErr('Check your inbox and open the confirmation link, then sign in here.');
+          setMode('signin');
+          return;
+        }
+      } else {
+        await repo.signIn(email.trim(), password);
       }
+      const p = await repo.getProfile();
       if (p && mode === 'signup') {
         await repo.saveProfile({ ...p, displayName: name.trim() || p.displayName, prefs: { ...DEFAULT_PREFS, interests: interests.length ? interests : DEFAULT_PREFS.interests, style } });
       }

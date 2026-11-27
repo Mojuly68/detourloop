@@ -20,7 +20,11 @@ export interface Repo {
   kind: 'cloud' | 'local';
   // auth
   currentUserId(): Promise<string | null>;
-  signUp(email: string, password: string, name: string): Promise<void>;
+  /**
+   * 'signed-in': a session exists now. 'confirm': the account needs its email confirmed first.
+   * 'exists': the email already has an account (Supabase hides this behind a session-less, identity-less user).
+   */
+  signUp(email: string, password: string, name: string): Promise<'signed-in' | 'confirm' | 'exists'>;
   signIn(email: string, password: string): Promise<void>;
   signOut(): Promise<void>;
   // profile
@@ -68,8 +72,9 @@ export const LocalRepo: Repo = {
       plan: 'free', notifications: false, affinity: {}, dismissed: [], createdAt: new Date().toISOString(),
     };
     await write(K.profile, p);
+    return 'signed-in';
   },
-  async signIn(email, password) { return this.signUp(email, password, ''); },
+  async signIn(email, password) { await this.signUp(email, password, ''); },
   async signOut() { await AsyncStorage.removeItem(K.profile); },
   getProfile: () => read<Profile | null>(K.profile, null),
   saveProfile: (p) => write(K.profile, p),
@@ -191,12 +196,23 @@ export const CloudRepo: Repo = {
   kind: 'cloud',
   async currentUserId() { const { data } = await sb().auth.getSession(); return data.session?.user.id ?? null; },
   async signUp(email, password, name) {
-    const { error } = await sb().auth.signUp({ email, password, options: { data: { display_name: name } } });
-    if (error) throw error;
+    const { data, error } = await sb().auth.signUp({ email, password, options: { data: { display_name: name } } });
+    if (error) {
+      if (/already (been )?registered|already exists/i.test(error.message)) return 'exists';
+      throw error;
+    }
+    if (data.session) return 'signed-in';
+    // With email confirmation on, an existing email comes back as a user with no identities.
+    if (data.user && (data.user.identities?.length ?? 0) === 0) return 'exists';
+    return 'confirm';
   },
   async signIn(email, password) {
     const { error } = await sb().auth.signInWithPassword({ email, password });
-    if (error) throw error;
+    if (error) {
+      if (/email not confirmed/i.test(error.message)) throw new Error('Confirm your email first: open the link we sent you, then sign in.');
+      if (/invalid login credentials/i.test(error.message)) throw new Error('Wrong email or password.');
+      throw error;
+    }
   },
   async signOut() { await sb().auth.signOut(); },
   async getProfile() {
