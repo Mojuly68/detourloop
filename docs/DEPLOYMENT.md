@@ -67,6 +67,15 @@ Web build of the mobile app (optional, e.g. for a browser beta): `npx expo expor
 5. **Public SDK key** (`appl_…`, Project → API keys) → `EXPO_PUBLIC_REVENUECAT_IOS_KEY` in the Codemagic build environment (`vars:` of `ios-testflight`, or a variable group). It is a public key, safe in the app. Android: same with `goog_…` → `EXPO_PUBLIC_REVENUECAT_ANDROID_KEY` and a Google Play service account in RevenueCat.
 6. **Webhook** (cloud mode only): `supabase functions deploy revenuecat-webhook --no-verify-jwt`, `supabase secrets set REVENUECAT_WEBHOOK_AUTH="Bearer <long random string>"`, then RevenueCat → Integrations → Webhooks with the function URL and the same Authorization value. It updates `subscriptions` and `profiles.subscription_status`. Migration `20261126000000_protect_subscription_status.sql` makes that column writable only by the webhooks.
 
+**Google Play (Android)**, set up 27–28 Nov 2026:
+
+- Play Console app `com.detourloop.app` (account DynoMark). Internal testing track live; first bundle uploaded by hand.
+- Subscriptions: `detourloop_monthly` (base plan `monthly`, $2.29) and `detourloop_annual` (base plan `annual`, $24.00 US), both active. RevenueCat product IDs are `detourloop_monthly:monthly` and `detourloop_annual:annual`, attached to `plus` and to the default offering's Monthly / Yearly packages.
+- RevenueCat Play app `app76284dbfb2` uses the TorkVRA service account `revenuecat@torkvra-play.iam.gserviceaccount.com` (granted View app info, View financial data, Manage orders and subscriptions on DetourLoop). Its JSON key is uploaded in RevenueCat by hand; new apps can take up to 36 h before Google accepts it.
+- Public SDK key `goog_…` is in both Android workflows in `codemagic.yaml`.
+- Release builds: `android-play` workflow → signed `.aab` (upload key stored in Codemagic as `detourloop_upload`; the keystore and its password live in `_private/detourloop-android/` outside the repo). `plugins/withPlayRelease.js` wires the signing and the versionCode.
+- Purchases only work in builds installed from Play (internal testing link), not in the sideloaded APK. Add tester accounts under Play Console → Settings → License testing so test purchases are free.
+
 Testing: TestFlight purchases use Apple's sandbox and are never charged. Sandbox subscriptions renew every few minutes (a month ≈ 5 min) and stop after a few renewals. The paywall's **Restore purchases** button and the auto-renewal text are required by App Review. Before release, publish a privacy policy at `EXPO_PUBLIC_WEB_URL/privacy` (the paywall links to it when the web URL is set).
 
 ## 5. Video render worker

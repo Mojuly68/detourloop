@@ -27,6 +27,9 @@ workflows:
         # Public Supabase values: safe in the app, access is enforced by row-level security.
         EXPO_PUBLIC_SUPABASE_URL: https://guiyyrtagdbiovobfmuu.supabase.co
         EXPO_PUBLIC_SUPABASE_ANON_KEY: sb_publishable_lXqHl6RO9pQPvfw3ftYhTw_Xe-hXPJo
+        # RevenueCat public SDK key (Play Store app). Purchases only work in builds installed from Play;
+        # in this sideloaded APK the paywall loads prices but Google refuses the purchase.
+        EXPO_PUBLIC_REVENUECAT_ANDROID_KEY: goog_cGtzEgQmurRRnxoNrxwfGbCINrt
       # groups:
       #   - detourloop_public
     triggering:
@@ -76,8 +79,8 @@ workflows:
       vars:
         EXPO_PUBLIC_SUPABASE_URL: https://guiyyrtagdbiovobfmuu.supabase.co
         EXPO_PUBLIC_SUPABASE_ANON_KEY: sb_publishable_lXqHl6RO9pQPvfw3ftYhTw_Xe-hXPJo
-        # RevenueCat public SDK key for the Google Play app (goog_…). Public by design.
-        # EXPO_PUBLIC_REVENUECAT_ANDROID_KEY: goog_xxxxxxxxxxxxxxxxxxxxxxxxxx
+        # RevenueCat public SDK key for the Google Play app (DetoorLoop project). Public by design.
+        EXPO_PUBLIC_REVENUECAT_ANDROID_KEY: goog_cGtzEgQmurRRnxoNrxwfGbCINrt
     scripts:
       - name: Install dependencies
         script: npm ci
